@@ -58,6 +58,18 @@ Ordner haben. Der Sync
 - importiert Gewicht **und Körperfett**; als Tageswert zählt die erste Messung des Tages (morgens),
 - verarbeitet max. 4 Downloads pro Aufruf; der Client ruft so lange nach, bis alles importiert ist.
 
+## Automatischer Sync (Cron)
+
+Der Worker `olivers-score-cron` (`cron/`) ruft täglich um **23:59 Uhr Berliner Zeit** `POST /api/sync` auf.
+Cloudflare-Crons laufen in UTC, daher feuert der Trigger `59 21-22 * * *` (ein Trigger, Free-Plan-Limit: 5 pro Account)
+und der Worker führt nur den Lauf aus, der in Berlin 23 Uhr ist (Sommer/Winterzeit).
+Authentifizierung über das Secret `CRON_SECRET` (identisch im Pages-Projekt und im Worker), nur für `/api/sync`.
+
+```bash
+npx wrangler deploy --config cron/wrangler.toml
+npx wrangler secret put CRON_SECRET --config cron/wrangler.toml
+```
+
 ## Review der alten App (score-83w.pages.dev)
 
 Gefundene Fehler und Logikprobleme, die in dieser Version behoben sind:
@@ -86,8 +98,6 @@ Gefundene Fehler und Logikprobleme, die in dieser Version behoben sind:
 
 - **Wiegen-Routine:** Die letzte Messung ist vom 15.08. Ohne 2–3 Messungen pro Woche gibt es keinen Trend und
   keine Prognose. Health-Connect-Export für Gewicht wieder aktivieren (aktuell nur bis 14.08. in Drive).
-- **Automatischer Sync per Cron:** ein kleiner Worker mit Cron-Trigger (wie bei `dagoberts-geldspeicher-cron`)
-  ruft den Import täglich auf, dann entfällt der Knopfdruck.
 - **MyFitnessPal-Import:** MFP bietet keine offene API; ein CSV-Export (Premium) ließe sich wie Health Connect
   importieren und würde kcal/Protein automatisch füllen.
 - **Erinnerung abends** (z. B. 21 Uhr), falls für heute noch kein Eintrag existiert – als Web-Push oder E-Mail.

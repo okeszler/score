@@ -1,0 +1,17 @@
+name = "olivers-score-cron"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+workers_dev = false
+
+# Täglich 23:59 Europe/Berlin (Sommerzeit = 21:59 UTC, Winterzeit = 22:59 UTC)
+[triggers]
+crons = ["59 21-22 * * *"]
+
+[vars]
+SYNC_URL = "https://olivers-score.pages.dev/api/sync"
+
+# Secret (identisch mit CRON_SECRET im Pages-Projekt olivers-score):
+#   npx wrangler secret put CRON_SECRET --config cron/wrangler.toml
+
+[observability]
+enabled = true
