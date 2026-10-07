@@ -1,0 +1,13 @@
+name = "olivers-score"
+pages_build_output_dir = "public"
+compatibility_date = "2024-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "score"
+database_id = "0156d61a-6bf5-40de-b0ab-82e60868f886"
+migrations_dir = "migrations"
+
+# Secrets (nicht hier eintragen!):
+#   npx wrangler pages secret put APP_PASSWORD --project-name olivers-score
+#   npx wrangler pages secret put GOOGLE_SERVICE_ACCOUNT_JSON --project-name olivers-score

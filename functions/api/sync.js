@@ -1,0 +1,87 @@
+import { downloadFile, getAccessToken, listHealthFiles, parseStepsCsv, parseWeightCsv, rangeFromName } from '../../lib/drive.js';
+import { json, handler, HttpError } from '../../lib/http.js';
+
+const MAX_DOWNLOADS = 4; // pro Aufruf – große 30-Tage-Exporte kosten CPU-Zeit
+const WEIGHT_CAT = 'gewicht2'; // v2: importiert jetzt auch Körperfett (alte Imports werden einmal nachgeholt)
+
+export const onRequestGet = handler(async ({ env }) => {
+  const last = await env.DB.prepare('SELECT MAX(imported_at) AS at, COUNT(*) AS n FROM sync_files').first();
+  const lastSteps = await env.DB.prepare('SELECT MAX(entry_date) AS d FROM sync_steps_daily').first();
+  const lastWeight = await env.DB.prepare('SELECT MAX(entry_date) AS d FROM sync_weight_readings').first();
+  return json({
+    configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON,
+    lastImport: last?.at ?? null,
+    files: last?.n ?? 0,
+    lastStepsDate: lastSteps?.d ?? null,
+    lastWeightDate: lastWeight?.d ?? null,
+  });
+});
+
+export const onRequestPost = handler(async ({ env }) => {
+  if (!env.GOOGLE_SERVICE_ACCOUNT_JSON) throw new HttpError('Google Service Account ist nicht konfiguriert', 503);
+  const token = await getAccessToken(env.GOOGLE_SERVICE_ACCOUNT_JSON);
+  const files = await listHealthFiles(token);
+
+  const { results: known } = await env.DB.prepare('SELECT drive_file_id, category FROM sync_files').all();
+  const done = new Map(known.map(k => [k.drive_file_id, k.category]));
+  const pending = files.filter(f => {
+    const cat = done.get(f.id);
+    if (!cat) return true;
+    return f.category === 'gewicht' && cat !== WEIGHT_CAT;
+  });
+
+  // Neueste zuerst. Ein Schritte-Export, dessen Zeitraum vollständig in einem neueren,
+  // bereits verarbeiteten Export liegt, muss nicht heruntergeladen werden.
+  pending.sort((a, b) => b.modifiedTime.localeCompare(a.modifiedTime));
+  const covered = [];
+  const report = { imported: [], skipped: 0, stepsDays: 0, weightReadings: 0, errors: [] };
+  let downloads = 0;
+
+  const markDone = (f, cat) => env.DB.prepare(`INSERT INTO sync_files (category, drive_file_id, file_name, modified_time)
+    VALUES (?,?,?,?) ON CONFLICT(drive_file_id) DO UPDATE SET category = excluded.category, imported_at = datetime('now')`)
+    .bind(cat, f.id, f.name, f.modifiedTime);
+
+  for (const f of pending) {
+    const range = rangeFromName(f.name);
+    if (f.category === 'schritte' && range && covered.some(c => c.from <= range.from && c.to >= range.to)) {
+      await markDone(f, 'schritte').run();
+      report.skipped++;
+      continue;
+    }
+    if (downloads >= MAX_DOWNLOADS) break;
+    downloads++;
+    try {
+      const text = await downloadFile(token, f.id);
+      const stmts = [];
+      if (f.category === 'schritte') {
+        const sums = parseStepsCsv(text);
+        for (const [date, steps] of Object.entries(sums)) {
+          // MAX: ein späterer Export enthält den Tag vollständiger als ein früherer
+          stmts.push(env.DB.prepare(`INSERT INTO sync_steps_daily (entry_date, steps) VALUES (?, ?)
+            ON CONFLICT(entry_date) DO UPDATE SET steps = MAX(steps, excluded.steps), updated_at = datetime('now')`).bind(date, steps));
+        }
+        report.stepsDays += stmts.length;
+        if (range) covered.push(range);
+        stmts.push(markDone(f, 'schritte'));
+      } else {
+        const rows = parseWeightCsv(text);
+        for (const r of rows) {
+          stmts.push(env.DB.prepare(`INSERT INTO sync_weight_readings (entry_date, reading_time, weight_kg, body_fat_pct)
+            VALUES (?,?,?,?) ON CONFLICT(entry_date, reading_time, weight_kg)
+            DO UPDATE SET body_fat_pct = COALESCE(body_fat_pct, excluded.body_fat_pct)`)
+            .bind(r.entry_date, r.reading_time, r.weight_kg, r.body_fat_pct));
+        }
+        report.weightReadings += rows.length;
+        stmts.push(markDone(f, WEIGHT_CAT));
+      }
+      await env.DB.batch(stmts);
+      report.imported.push(f.name);
+    } catch (e) {
+      report.errors.push(`${f.name}: ${e.message}`);
+    }
+  }
+
+  const processed = report.imported.length + report.skipped + report.errors.length;
+  report.remaining = Math.max(0, pending.length - processed);
+  return json(report);
+});

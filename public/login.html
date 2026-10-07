@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Anmelden · Olivers Score</title>
+<meta name="theme-color" content="#2e3747">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="/assets/app.css">
+<script>try{var t=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<div class="login">
+  <form class="card form reveal" id="login" autocomplete="on">
+    <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg></span>
+      <div><b>SCORE</b><span>Olivers Weg zu 85 kg</span></div></div>
+    <input type="text" name="username" value="oliver" autocomplete="username" hidden>
+    <div class="field"><label for="pw">Passwort</label><input id="pw" type="password" name="password" autocomplete="current-password" required autofocus></div>
+    <div class="form-error" id="err" role="alert"></div>
+    <button class="btn block" type="submit">Anmelden</button>
+  </form>
+</div>
+<script type="module" src="/assets/pages/login.js"></script>
+</body>
+</html>
