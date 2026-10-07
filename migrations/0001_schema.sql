@@ -42,3 +42,14 @@ CREATE TABLE IF NOT EXISTS sync_steps_daily (
   steps INTEGER NOT NULL,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS sync_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ran_at TEXT NOT NULL DEFAULT (datetime('now')),
+  source TEXT NOT NULL,
+  imported INTEGER NOT NULL DEFAULT 0,
+  skipped INTEGER NOT NULL DEFAULT 0,
+  steps_days INTEGER NOT NULL DEFAULT 0,
+  weight_readings INTEGER NOT NULL DEFAULT 0,
+  remaining INTEGER NOT NULL DEFAULT 0,
+  errors TEXT
+);

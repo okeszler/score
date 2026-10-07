@@ -1,4 +1,4 @@
-import { downloadFile, getAccessToken, listHealthFiles, parseStepsCsv, parseWeightCsv, rangeFromName } from '../../lib/drive.js';
+import { downloadFile, FormatError, getAccessToken, listHealthFiles, parseStepsCsv, parseWeightCsv, rangeFromName } from '../../lib/drive.js';
 import { json, handler, HttpError } from '../../lib/http.js';
 
 const MAX_DOWNLOADS = 4; // pro Aufruf – große 30-Tage-Exporte kosten CPU-Zeit
@@ -8,7 +8,9 @@ export const onRequestGet = handler(async ({ env }) => {
   const last = await env.DB.prepare('SELECT MAX(imported_at) AS at, COUNT(*) AS n FROM sync_files').first();
   const lastSteps = await env.DB.prepare('SELECT MAX(entry_date) AS d FROM sync_steps_daily').first();
   const lastWeight = await env.DB.prepare('SELECT MAX(entry_date) AS d FROM sync_weight_readings').first();
+  const lastRun = await env.DB.prepare('SELECT * FROM sync_log ORDER BY id DESC LIMIT 1').first();
   return json({
+    lastRun: lastRun ? { ...lastRun, errors: lastRun.errors ? JSON.parse(lastRun.errors) : [] } : null,
     configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON,
     lastImport: last?.at ?? null,
     files: last?.n ?? 0,
@@ -17,7 +19,29 @@ export const onRequestGet = handler(async ({ env }) => {
   });
 });
 
-export const onRequestPost = handler(async ({ env }) => {
+// Jeder Lauf (manuell oder Cron) wird in sync_log protokolliert – auch wenn er komplett scheitert.
+export const onRequestPost = handler(async ({ request, env }) => {
+  const source = request.headers.has('Authorization') ? 'cron' : 'manuell';
+  let report;
+  try {
+    report = await runSync(env);
+  } catch (e) {
+    await log(env, source, { imported: [], skipped: 0, stepsDays: 0, weightReadings: 0, remaining: 0, errors: [e.message] });
+    throw e;
+  }
+  await log(env, source, report);
+  return json(report);
+});
+
+async function log(env, source, r) {
+  await env.DB.prepare(`INSERT INTO sync_log (source, imported, skipped, steps_days, weight_readings, remaining, errors)
+    VALUES (?,?,?,?,?,?,?)`).bind(source, r.imported.length, r.skipped, r.stepsDays, r.weightReadings, r.remaining,
+    r.errors.length ? JSON.stringify(r.errors) : null).run();
+  // Protokoll klein halten
+  await env.DB.prepare('DELETE FROM sync_log WHERE id NOT IN (SELECT id FROM sync_log ORDER BY id DESC LIMIT 200)').run();
+}
+
+async function runSync(env) {
   if (!env.GOOGLE_SERVICE_ACCOUNT_JSON) throw new HttpError('Google Service Account ist nicht konfiguriert', 503);
   const token = await getAccessToken(env.GOOGLE_SERVICE_ACCOUNT_JSON);
   const files = await listHealthFiles(token);
@@ -78,10 +102,12 @@ export const onRequestPost = handler(async ({ env }) => {
       report.imported.push(f.name);
     } catch (e) {
       report.errors.push(`${f.name}: ${e.message}`);
+      // Dauerhaft unlesbare Datei (falsches Format) nicht bei jedem Lauf erneut versuchen
+      if (e instanceof FormatError) await markDone(f, 'fehler').run();
     }
   }
 
   const processed = report.imported.length + report.skipped + report.errors.length;
   report.remaining = Math.max(0, pending.length - processed);
-  return json(report);
-});
+  return report;
+}

@@ -25,8 +25,15 @@ async function runSync(env) {
 
 export default {
   async scheduled(event, env) {
-    if (berlinHour(new Date(event.scheduledTime)) !== 23) return;
-    const result = await runSync(env);
+    if (!env.FORCE_RUN && berlinHour(new Date(event.scheduledTime)) !== 23) return;
+    let result;
+    try {
+      result = await runSync(env);
+    } catch (e) {
+      // Fehler, die die App selbst nicht protokollieren konnte (Netzwerk, Antwortformat …)
+      await env.DB?.prepare("INSERT INTO sync_log (source, errors) VALUES ('cron', ?)").bind(JSON.stringify([`Worker: ${e.message}`])).run();
+      throw e;
+    }
     console.log('Health Sync', JSON.stringify(result));
     if (result.errors.length) throw new Error(`Sync mit Fehlern: ${result.errors.join('; ')}`);
   },

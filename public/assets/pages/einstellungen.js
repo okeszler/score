@@ -1,5 +1,5 @@
 import { BEER, RISK_DAY_G } from '../score.js';
-import { api, boot, currentTheme, fmt, icon, loadContext, setTheme, shell, toast } from '../app.js';
+import { api, boot, currentTheme, esc, fmt, icon, loadContext, setTheme, shell, toast } from '../app.js';
 
 shell({ page: 'einstellungen', title: 'Einstellungen', subtitle: 'Ziele, Sync & Konto' });
 
@@ -40,9 +40,13 @@ boot(async main => {
             <div class="row"><span>Schritte bis</span><b>${sync.lastStepsDate ?? '–'}</b></div>
             <div class="row"><span>Gewicht bis</span><b>${sync.lastWeightDate ?? '–'}</b></div>
             <div class="row"><span>Verarbeitete Dateien</span><b>${fmt(sync.files)}</b></div>
+            ${sync.lastRun ? `<div class="row"><span>Letzter Lauf (${sync.lastRun.source === 'cron' ? 'automatisch' : 'manuell'})</span>
+              <b class="${sync.lastRun.errors.length ? 'bad' : 'good'}">${new Date(sync.lastRun.ran_at.replace(' ', 'T') + 'Z').toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}
+              · ${sync.lastRun.errors.length ? 'Fehler' : `${sync.lastRun.imported} neu`}</b></div>
+              ${sync.lastRun.errors.length ? `<div class="row" style="display:block;color:var(--bad);font-size:.82rem">${sync.lastRun.errors.map(esc).join('<br>')}</div>` : ''}` : ''}
           </div>
           <button class="btn secondary block" style="margin-top:14px" id="sync">${icon('sync')} Jetzt synchronisieren</button>
-          <p class="muted" style="font-size:.8rem;margin:10px 0 0">Liest „Schritte …“ und „Gewicht … Health Connect.csv“ aus den Google-Drive-Ordnern, die mit dem Service Account geteilt sind.</p>`
+          <p class="muted" style="font-size:.8rem;margin:10px 0 0">Automatisch jeden Tag um 23:59 Uhr. Liest „Schritte …“ und „Gewicht … Health Connect.csv“ aus den Google-Drive-Ordnern, die mit dem Service Account geteilt sind.</p>`
         : '<p class="muted">Nicht eingerichtet: Secret <code>GOOGLE_SERVICE_ACCOUNT_JSON</code> fehlt im Pages-Projekt.</p>'}
       </section>
 
