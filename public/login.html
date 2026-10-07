@@ -20,9 +20,19 @@
     <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg></span>
       <div><b>SCORE</b><span>Olivers Weg zu 85 kg</span></div></div>
     <input type="text" name="username" value="oliver" autocomplete="username" hidden>
-    <div class="field"><label for="pw">Passwort</label><input id="pw" type="password" name="password" autocomplete="current-password" required autofocus></div>
+    <div class="pin-dots" id="dots" aria-hidden="true"></div>
+    <div class="field pin-text" id="textfield"><label for="pw">Passwort</label>
+      <input id="pw" type="password" name="password" autocomplete="current-password" inputmode="none"></div>
     <div class="form-error" id="err" role="alert"></div>
-    <button class="btn block" type="submit">Anmelden</button>
+    <div class="keypad" id="keypad" role="group" aria-label="Ziffernfeld">
+      <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+      <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+      <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+      <button type="button" data-k="del" class="key-fn" aria-label="Löschen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H9l-6 7 6 7h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><path d="m16 9-5 6M11 9l5 6"/></svg></button>
+      <button type="button" data-k="0">0</button>
+      <button type="submit" class="key-ok" aria-label="Anmelden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></button>
+    </div>
+    <button type="button" class="btn ghost" id="mode">Passwort mit Tastatur eingeben</button>
   </form>
 </div>
 <script type="module" src="/assets/pages/login.js"></script>

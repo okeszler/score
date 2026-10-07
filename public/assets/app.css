@@ -436,7 +436,7 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .login .card { width: min(100%, 380px); padding: 30px 26px; }
 .login .brand { display: flex; gap: 12px; align-items: center; margin-bottom: 22px; }
 .login .brand b { font-size: 1.4rem; font-weight: 600; letter-spacing: 1.5px; display: block; }
-.login .brand span { color: var(--muted); font-size: 0.9rem; }
+.login .brand div span { color: var(--muted); font-size: 0.9rem; }
 .logo { width: 46px; height: 46px; border-radius: 13px; background: linear-gradient(135deg, var(--accent), #d9534f); display: grid; place-items: center; color: #fff; flex: none; }
 .logo svg { width: 26px; height: 26px; }
 .form-error { color: var(--bad); font-size: 0.88rem; min-height: 1.2em; }
@@ -455,3 +455,29 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; transition-duration: 0.01ms !important; }
   .chart .draw { stroke-dashoffset: 0; }
 }
+
+/* Login: Ziffernfeld */
+.login .card { text-align: center; }
+.login .brand { justify-content: center; text-align: left; }
+.pin-dots { display: flex; justify-content: center; gap: 12px; min-height: 18px; margin: 4px 0 2px; }
+.pin-dots i { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); animation: dot-in 0.2s var(--ease); }
+.pin-dots:empty::before { content: 'PIN eingeben'; color: var(--muted); font-size: 0.9rem; line-height: 18px; }
+@keyframes dot-in { from { transform: scale(0); } }
+.pin-dots.shake { animation: shake 0.4s; }
+@keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+.pin-text { display: none; text-align: left; }
+.login.text-mode .pin-text { display: grid; }
+.login.text-mode .pin-dots, .login.text-mode .keypad button[data-k] { display: none; }
+.login.text-mode .keypad { grid-template-columns: 1fr; }
+.login.text-mode .key-ok { width: 100%; border-radius: var(--radius-sm); aspect-ratio: auto; height: 50px; }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; justify-items: center; margin: 6px auto 0; max-width: 280px; width: 100%; }
+.keypad button {
+  width: 100%; max-width: 76px; aspect-ratio: 1; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2);
+  font-size: 1.7rem; font-weight: 300; cursor: pointer; display: grid; place-items: center; color: var(--ink);
+  transition: transform 0.1s, background 0.15s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none;
+}
+.keypad button:active { transform: scale(0.92); background: var(--line); }
+.keypad button svg { width: 26px; height: 26px; }
+.keypad .key-fn { background: transparent; border-color: transparent; color: var(--muted); }
+.keypad .key-ok { background: linear-gradient(135deg, var(--accent), #d9534f); color: #fff; border: 0; box-shadow: 0 6px 16px rgba(236, 106, 92, 0.3); }
+.keypad .key-ok[disabled] { opacity: 0.6; }
