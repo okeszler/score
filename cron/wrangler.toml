@@ -7,6 +7,11 @@ workers_dev = false
 [triggers]
 crons = ["59 21-22 * * *"]
 
+[[d1_databases]]
+binding = "DB"
+database_name = "score"
+database_id = "0156d61a-6bf5-40de-b0ab-82e60868f886"
+
 [vars]
 SYNC_URL = "https://olivers-score.pages.dev/api/sync"
 

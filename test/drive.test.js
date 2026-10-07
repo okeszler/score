@@ -27,3 +27,8 @@ test('Zeitraum aus Dateinamen', () => {
 test('Unbekanntes Format wirft', () => {
   assert.throws(() => parseStepsCsv('foo,bar\n1,2'));
 });
+
+test('Formatfehler sind als FormatError erkennbar', async () => {
+  const { FormatError } = await import('../lib/drive.js');
+  assert.throws(() => parseWeightCsv('a,b\n1,2'), FormatError);
+});
