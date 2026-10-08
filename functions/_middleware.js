@@ -3,7 +3,7 @@ import { ensureSchema } from '../lib/db.js';
 import { error } from '../lib/http.js';
 
 // Öffentlich erreichbar ohne Login
-const PUBLIC = [/^\/login(\.html)?$/, /^\/api\/login$/, /^\/assets\//, /^\/manifest\.webmanifest$/, /^\/icon\.svg$/, /^\/favicon\.ico$/];
+const PUBLIC = [/^\/login(\.html)?$/, /^\/api\/login$/, /^\/api\/webauthn\/login(-options)?$/, /^\/assets\//, /^\/manifest\.webmanifest$/, /^\/icon\.svg$/, /^\/favicon\.ico$/];
 
 export async function onRequest(ctx) {
   const { request, env, next } = ctx;

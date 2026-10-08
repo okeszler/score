@@ -58,6 +58,14 @@ Ordner haben. Der Sync
 - importiert Gewicht **und Körperfett**; als Tageswert zählt die erste Messung des Tages (morgens),
 - verarbeitet max. 4 Downloads pro Aufruf; der Client ruft so lange nach, bis alles importiert ist.
 
+## Anmeldung
+
+- **PIN** über das Ziffernfeld (Secret `APP_PASSWORD`), Session-Cookie 30 Tage.
+- **Fingerabdruck (Passkey/WebAuthn):** Nach der PIN-Anmeldung wird einmalig angeboten, den Fingerabdruck einzurichten
+  (alternativ in den Einstellungen). Danach fragt die Login-Seite auf diesem Gerät direkt den Fingerabdruck ab.
+  Gespeichert wird nur der öffentliche Schlüssel (`webauthn_credentials`); Prüfung in `lib/webauthn.js`
+  (Origin, RP-ID, Nutzer-Verifikation, Signatur, Zähler, zeitlich begrenzte signierte Challenge).
+
 ## Automatischer Sync (Cron)
 
 Der Worker `olivers-score-cron` (`cron/`) ruft täglich um **23:59 Uhr Berliner Zeit** `POST /api/sync` auf.
