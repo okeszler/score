@@ -481,3 +481,5 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .keypad .key-fn { background: transparent; border-color: transparent; color: var(--muted); }
 .keypad .key-ok { background: linear-gradient(135deg, var(--accent), #d9534f); color: #fff; border: 0; box-shadow: 0 6px 16px rgba(236, 106, 92, 0.3); }
 .keypad .key-ok[disabled] { opacity: 0.6; }
+#bio { margin-top: 4px; }
+#bio svg { width: 22px; height: 22px; }

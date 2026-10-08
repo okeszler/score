@@ -1,5 +1,6 @@
 import { BEER, RISK_DAY_G } from '../score.js';
-import { api, boot, currentTheme, esc, fmt, icon, loadContext, setTheme, shell, toast } from '../app.js';
+import { api, boot, confirmDialog, currentTheme, esc, fmt, icon, loadContext, setTheme, shell, toast } from '../app.js';
+import { deviceHasPasskey, forgetDevice, passkeySupported, registerPasskey } from '../passkey.js';
 
 shell({ page: 'einstellungen', title: 'Einstellungen', subtitle: 'Ziele, Sync & Konto' });
 
@@ -15,7 +16,7 @@ const FIELDS = [
 ];
 
 boot(async main => {
-  const [ctx, sync] = await Promise.all([loadContext(1), api('/api/sync')]);
+  const [ctx, sync, keys, bioOk] = await Promise.all([loadContext(1), api('/api/sync'), api('/api/webauthn/credentials'), passkeySupported()]);
   const g = ctx.goals;
 
   main.innerHTML = `
@@ -48,6 +49,18 @@ boot(async main => {
           <button class="btn secondary block" style="margin-top:14px" id="sync">${icon('sync')} Jetzt synchronisieren</button>
           <p class="muted" style="font-size:.8rem;margin:10px 0 0">Automatisch jeden Tag um 23:59 Uhr. Liest „Schritte …“ und „Gewicht … Health Connect.csv“ aus den Google-Drive-Ordnern, die mit dem Service Account geteilt sind.</p>`
         : '<p class="muted">Nicht eingerichtet: Secret <code>GOOGLE_SERVICE_ACCOUNT_JSON</code> fehlt im Pages-Projekt.</p>'}
+      </section>
+
+      <section class="card" data-reveal>
+        <div class="card-title">Fingerabdruck-Anmeldung</div>
+        ${keys.credentials.length ? `<div class="list">${keys.credentials.map(k => `
+          <div class="list-item"><div class="meta"><b>${esc(k.label || 'Gerät')}</b>
+            <span>eingerichtet ${new Date(k.created_at.replace(' ', 'T') + 'Z').toLocaleDateString('de-DE')}${k.last_used ? ` · zuletzt ${new Date(k.last_used.replace(' ', 'T') + 'Z').toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}` : ''}</span></div>
+            <div class="actions"><button class="del" data-key="${esc(k.id)}" aria-label="Entfernen">${icon('trash')}</button></div></div>`).join('')}</div>`
+          : '<p class="muted" style="margin-top:0">Noch kein Gerät eingerichtet.</p>'}
+        ${bioOk ? (deviceHasPasskey() && keys.credentials.length ? '<p class="muted" style="font-size:.82rem;margin:10px 0 0">Auf diesem Gerät eingerichtet. Beim Öffnen der Login-Seite wird der Fingerabdruck direkt abgefragt.</p>'
+          : `<button class="btn secondary block" id="bio-add" style="margin-top:12px">Auf diesem Gerät einrichten</button>`)
+          : '<p class="muted" style="font-size:.82rem;margin:10px 0 0">Dieser Browser bzw. dieses Gerät unterstützt keine Fingerabdruck-Anmeldung.</p>'}
       </section>
 
       <section class="card" data-reveal>
@@ -86,6 +99,26 @@ boot(async main => {
     setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
     document.dispatchEvent(new CustomEvent('datachange'));
   });
+  document.getElementById('bio-add')?.addEventListener('click', async e => {
+    e.target.disabled = true;
+    try {
+      await registerPasskey();
+      toast('Fingerabdruck eingerichtet', 'success');
+      document.dispatchEvent(new CustomEvent('datachange'));
+    } catch (ex) {
+      if (ex.name !== 'NotAllowedError') toast(ex.message, 'error');
+      e.target.disabled = false;
+    }
+  });
+  main.querySelectorAll('[data-key]').forEach(b => b.addEventListener('click', async () => {
+    if (!(await confirmDialog('Fingerabdruck-Anmeldung für dieses Gerät entfernen?', 'Entfernen'))) return;
+    try {
+      await api(`/api/webauthn/credentials?id=${encodeURIComponent(b.dataset.key)}`, { method: 'DELETE' });
+      forgetDevice();
+      toast('Entfernt', 'success');
+      document.dispatchEvent(new CustomEvent('datachange'));
+    } catch (ex) { toast(ex.message, 'error'); }
+  }));
   document.getElementById('logout').addEventListener('click', async () => {
     await api('/api/logout', { method: 'POST' }).catch(() => {});
     location.href = '/login';

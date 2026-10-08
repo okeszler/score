@@ -53,3 +53,12 @@ CREATE TABLE IF NOT EXISTS sync_log (
   remaining INTEGER NOT NULL DEFAULT 0,
   errors TEXT
 );
+CREATE TABLE IF NOT EXISTS webauthn_credentials (
+  id TEXT PRIMARY KEY,
+  public_key TEXT NOT NULL,
+  alg INTEGER NOT NULL,
+  sign_count INTEGER NOT NULL DEFAULT 0,
+  label TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  last_used TEXT
+);

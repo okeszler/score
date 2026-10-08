@@ -1,3 +1,5 @@
+import { deviceHasPasskey, loginWithPasskey, passkeySupported, registerPasskey } from '../passkey.js';
+
 const form = document.getElementById('login');
 const pw = document.getElementById('pw');
 const err = document.getElementById('err');
@@ -58,9 +60,8 @@ form.addEventListener('submit', async e => {
       body: JSON.stringify({ password: pw.value }),
     });
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Anmeldung fehlgeschlagen');
-    const next = new URLSearchParams(location.search).get('next') || '/';
-    // Nur relative Pfade zulassen (kein Open Redirect)
-    location.href = next.startsWith('/') && !next.startsWith('//') ? next : '/';
+    await offerPasskey();
+    goNext();
   } catch (ex) {
     err.textContent = ex.message;
     pw.value = '';
@@ -74,5 +75,49 @@ form.addEventListener('submit', async e => {
   }
 });
 
+function goNext() {
+  const next = new URLSearchParams(location.search).get('next') || '/';
+  // Nur relative Pfade zulassen (kein Open Redirect)
+  location.href = next.startsWith('/') && !next.startsWith('//') ? next : '/';
+}
+
+// ---------- Fingerabdruck (Passkey) ----------
+const bio = document.getElementById('bio');
+let bioSupported = false;
+
+async function bioLogin() {
+  err.textContent = '';
+  bio.disabled = true;
+  try {
+    if (await loginWithPasskey()) goNext();
+    else { bio.classList.add('hidden'); err.textContent = 'Kein Fingerabdruck eingerichtet – bitte PIN verwenden'; }
+  } catch (ex) {
+    // Abbruch durch den Nutzer ist kein Fehler
+    if (ex.name !== 'NotAllowedError' && ex.name !== 'AbortError') err.textContent = ex.message;
+  } finally {
+    bio.disabled = false;
+  }
+}
+bio.addEventListener('click', bioLogin);
+
+// Nach erfolgreicher PIN-Anmeldung einmalig anbieten, den Fingerabdruck einzurichten
+async function offerPasskey() {
+  if (!bioSupported || deviceHasPasskey()) return;
+  try { if (localStorage.getItem('passkeyDeclined') === '1') return; } catch {}
+  if (!confirm('Fingerabdruck für die nächste Anmeldung einrichten?')) {
+    try { localStorage.setItem('passkeyDeclined', '1'); } catch {}
+    return;
+  }
+  try { await registerPasskey(); } catch (ex) {
+    if (ex.name !== 'NotAllowedError') alert(`Einrichtung fehlgeschlagen: ${ex.message}`);
+  }
+}
+
 setMode(textMode);
 render();
+passkeySupported().then(ok => {
+  bioSupported = ok;
+  if (!ok || !deviceHasPasskey()) return;
+  bio.classList.remove('hidden');
+  bioLogin(); // direkt den Fingerabdruck abfragen
+});
