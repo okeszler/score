@@ -137,6 +137,9 @@ Gefundene Fehler und Logikprobleme, die in dieser Version behoben sind:
 - **Training automatisch aus Aktivitäten** (Merkliste): Samsung-Aktivitäten ≥ 20 min als Training werten?
   Offen: Krafttraining wird nur erkannt, wenn es auf der Uhr gestartet wird; Auto-Erkennung (z. B. Spielen
   am See als „Gehen“/„Dynamisches Training“) soll nicht ungewollt als Training zählen.
+- **Morgen-Check-in** (Merkliste): Karte „Wie geht's dir heute?“ mit 2 Fragen, je 1–5 (Gesichter):
+  Kopf (benebelt … klar / Brain Fog) und Stimmung. Klappt nach dem Antippen zu, nicht im Score;
+  später für Auswertungen (Bier/Schlaf/Schritte → Kopf & Stimmung am nächsten Morgen).
 - **Abend-Erinnerung** mit Antwort-Tasten (0 / 1 / 2+ Bier), nur wenn der Tag noch vorläufig ist.
 
 - **Auswertung „Bier → Nacht“** (vorgemerkt, Oliver sammelt erst Daten, Stand 10/2026): Ruhepuls und Tiefschlaf
