@@ -42,6 +42,13 @@ test('Ernährungs-CSV (MyFitnessPal über Health Sync): Tagessummen', async () =
   assert.deepEqual(parseNutritionCsv(csv), { '2026-10-08': { kcal: 1211, protein: 125 }, '2026-10-09': { kcal: 300, protein: 20 } });
 });
 
+test('Ernährungs-CSV ohne Protein-Spalte: Protein unbekannt statt 0', async () => {
+  const { parseNutritionCsv } = await import('../lib/drive.js');
+  const csv = 'Datum,Zeit,Mahlzeit,Name,Beschreibung,kcal,Kohlenhydrate (Gramm),Cholesterin (mg),Fett (Gramm),Ballaststoffe (Gramm),Zucker (Gramm)\n'
+    + '2026.10.08 10:00:00,10:00:00,1,null,null,510.7,31.42,0.0,3.26,0.0,28.36\n';
+  assert.deepEqual(parseNutritionCsv(csv), { '2026-10-08': { kcal: 511, protein: null } });
+});
+
 test('Gewicht-CSV: Körperwasser, Grundumsatz, Muskelmasse (0 = nicht gemessen)', () => {
   const csv = 'Datum,Zeit,Gewicht,Körperfettanteil,Körperfettmasse,Fettfreier Prozentsatz,Fettfreie Masse,Skelettmuskelanteil,Skelettmuskelmasse,Muskelmasse-Prozentsatz,Muskelmasse,Knochenmasse,Gesamtkörperwasser,Grundumsatz\n'
     + '2026.10.09 08:23:41,08:23:41,"94.9","22.817118","0.0","0.0","0.0","0.0","0.0","0.0","0.0","0.0","53.781723","1952"\n'
