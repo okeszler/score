@@ -1,12 +1,23 @@
 import { addDays, beerDecision, daysBetween, effectiveFluid, effectiveKcal, effectiveSteps, BEER_FLUID_ML, hasEntry, weekStart, weekSummary, weightTrend, activeStreak, BEER } from '../score.js';
-import { animateIn, api, boot, countUp, esc, fmt, fmtDate, fmtLong, icon, loadContext, modal, ring, shell, statusLabel, toast } from '../app.js';
+import { animateIn, api, boot, countUp, esc, fmt, fmtDate, fmtLong, icon, loadContext, modal, ring, shell, statusLabel, toast, today as todayIso } from '../app.js';
 import { lineChart, sparkline } from '../charts.js';
 import { bpCategory } from '../health.js';
 import { applyOrder, grip, makeSortable } from '../sortable.js';
 
 shell({ page: 'heute', title: 'Hallo Oliver', subtitle: 'Mein Weg zu 85 kg' });
 
+// Schnelltasten am App-Symbol (manifest.webmanifest → shortcuts): /?quick=bier | /?quick=wasser
+const QUICK = {
+  bier: { body: { beer_delta: 1 }, msg: '+1 Bier eingetragen' },
+  wasser: { body: { water_delta: 250 }, msg: '+250 ml Wasser eingetragen' },
+};
+const quick = QUICK[new URLSearchParams(location.search).get('quick')];
+if (quick) history.replaceState(null, '', '/'); // Neuladen trägt nicht doppelt ein
+const quickDone = quick && api(`/api/days/${todayIso()}`, { method: 'PATCH', body: quick.body })
+  .then(() => toast(quick.msg, 'success'), ex => toast(ex.message, 'error'));
+
 boot(async main => {
+  await quickDone;
   const [ctx, health, settings] = await Promise.all([
     loadContext(35),
     api(`/api/health?from=${addDays(new Date().toISOString().slice(0, 10), -30)}`).catch(() => null),
