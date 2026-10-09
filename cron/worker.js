@@ -1,6 +1,7 @@
-// Nächtlicher Health Sync für Olivers Score.
-// Cloudflare-Cron läuft in UTC; der Trigger feuert um 21:59 und 22:59 UTC,
-// ausgeführt wird nur der, der in Berlin 23:59 entspricht (Sommer-/Winterzeit).
+// Automatischer Health Sync für Olivers Score: alle 30 Minuten (:29 und :59),
+// tagsüber von 06:29 bis 23:59 Berliner Zeit; nachts (00:29–05:59) Pause.
+// Cloudflare-Cron läuft in UTC – die Zeitzone (Sommer/Winter) prüft der Worker selbst.
+export const FIRST_HOUR = 6; // erster Lauf 06:29
 
 function berlinHour(date) {
   const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hour: 'numeric', hourCycle: 'h23' }).formatToParts(date);
@@ -25,7 +26,7 @@ async function runSync(env) {
 
 export default {
   async scheduled(event, env) {
-    if (!env.FORCE_RUN && berlinHour(new Date(event.scheduledTime)) !== 23) return;
+    if (!env.FORCE_RUN && berlinHour(new Date(event.scheduledTime)) < FIRST_HOUR) return;
     let result;
     try {
       result = await runSync(env);

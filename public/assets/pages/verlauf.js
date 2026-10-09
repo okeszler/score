@@ -1,4 +1,4 @@
-import { addDays, effectiveSteps, hasEntry, parseDate, statusFor, weekStart, weekSummary } from '../score.js';
+import { addDays, effectiveSteps, isConfirmed, parseDate, statusFor, weekStart, weekSummary } from '../score.js';
 import { boot, fmt, fmtDate, loadContext, shell, statusLabel } from '../app.js';
 import { barChart, lineChart } from '../charts.js';
 
@@ -18,8 +18,8 @@ boot(async main => {
     const s = scores[d];
     const st = s?.status ?? 'none';
     const future = d > today;
-    const title = future ? '' : `${fmtDate(d)}: ${st === 'none' ? 'kein Eintrag' : `Score ${s.total} (${statusLabel(st)})`}`;
-    cells.push(`<a class="heat-cell st-${st} ${st === 'none' ? 'empty' : ''} ${future ? 'future' : ''} ${d === today ? 'today' : ''}"
+    const title = future ? '' : `${fmtDate(d)}: ${st === 'none' ? 'kein Eintrag' : `Score ${s.total} (${statusLabel(st)}${s.provisional ? ', vorläufig' : ''})`}`;
+    cells.push(`<a class="heat-cell st-${st} ${st === 'none' ? 'empty' : ''} ${s?.provisional ? 'prov' : ''} ${future ? 'future' : ''} ${d === today ? 'today' : ''}"
       ${future ? 'tabindex="-1"' : `href="/eintrag?date=${d}"`} title="${title}" aria-label="${title}" style="animation-delay:${i * 6}ms"></a>`);
   }
   const counted = Object.entries(scores).filter(([d, s]) => d >= firstMonday && s.status !== 'none');
@@ -40,7 +40,7 @@ boot(async main => {
   for (const d of Object.keys(daysByDate)) {
     const prev = daysByDate[addDays(d, -1)];
     const cur = daysByDate[d];
-    if (!hasEntry(prev) || !hasEntry(cur)) continue;
+    if (!isConfirmed(prev) || !isConfirmed(cur)) continue; // nur bestätigte Tage (Bier bekannt)
     const st = effectiveSteps(cur);
     (prev.beer_count > 0 ? after.beer : after.none).push({ steps: st, score: scores[d].total, tracked: cur.calories_kcal != null });
   }
@@ -60,6 +60,7 @@ boot(async main => {
       <span><i class="st-green"></i>Grün (${cnt('green')})</span>
       <span><i class="st-orange"></i>Orange (${cnt('orange')})</span>
       <span><i class="st-red"></i>Rot (${cnt('red')})</span>
+      <span><i class="st-green" style="opacity:.45;outline:1.5px dashed var(--ink-2);outline-offset:-1.5px"></i>Vorläufig</span>
       <span><i style="background:var(--surface-2);outline:1px dashed var(--line)"></i>Kein Eintrag</span>
     </div>
   </section>

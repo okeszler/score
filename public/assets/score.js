@@ -101,8 +101,33 @@ export function caloriesTracked(day) {
   return !!day && (day.calories_tracked === 1 || day.calories_tracked === true || effectiveKcal(day) != null);
 }
 
+/** Tag mit Score: eigener Eintrag ODER vorläufiger Tag aus importierten Daten. */
 export function hasEntry(day) {
-  return !!day && day.entry_date != null && day.created_at != null;
+  return !!day && day.entry_date != null && (day.created_at != null || day.provisional === true);
+}
+
+/** Bestätigter Tag = vom Nutzer gespeichert (nicht nur importiert). */
+export function isConfirmed(day) {
+  return !!day && day.created_at != null && day.created_at !== 'preview' && !day.provisional;
+}
+
+/**
+ * Vorläufige Tage aus importierten Daten (Schritte, MyFitnessPal) ergänzen –
+ * Annahme: 0 Bier, kein Training, bis der Tag bestätigt wird. Heute bekommt immer einen Tag.
+ */
+export function withProvisionalDays(daysByDate, synced = {}, food = {}, today) {
+  const out = { ...daysByDate };
+  const dates = new Set([...Object.keys(synced), ...Object.keys(food)]);
+  if (today) dates.add(today);
+  for (const d of dates) {
+    if (out[d] || (today && d > today)) continue;
+    out[d] = {
+      entry_date: d, provisional: true, created_at: null, beer_count: 0, gym_kraft: 0, gym_kardio: 0,
+      steps: null, walk_km: null, calories_kcal: null, protein_g: null, water_ml: null,
+      synced_steps: synced[d] ?? null, synced_kcal: food[d]?.kcal ?? null, synced_protein: food[d]?.protein ?? null,
+    };
+  }
+  return out;
 }
 
 /**
@@ -113,7 +138,7 @@ export function hasEntry(day) {
  * @param beersBefore Biere in derselben Woche VOR diesem Tag
  */
 export function scoreDay(day, goals, beersBefore = 0) {
-  if (!hasEntry(day)) return { total: null, status: 'none', parts: null };
+  if (!hasEntry(day)) return { total: null, status: 'none', parts: null, provisional: false };
   const g = mergeGoals(goals);
 
   const steps = effectiveSteps(day);
@@ -136,7 +161,7 @@ export function scoreDay(day, goals, beersBefore = 0) {
   if (beers > 0 && beersBefore + beers > g.weekly_beer_budget) alkohol = 0;
 
   const total = bewegung + ernaehrung + alkohol;
-  return { total, status: statusFor(total), parts: { bewegung, ernaehrung, alkohol }, steps };
+  return { total, status: statusFor(total), parts: { bewegung, ernaehrung, alkohol }, steps, provisional: day.provisional === true };
 }
 
 export function statusFor(total) {
@@ -166,7 +191,7 @@ export function scoreAll(daysByDate, goals) {
 export function weekSummary(daysByDate, scores, goals, monday, today) {
   const g = mergeGoals(goals);
   const days = [];
-  let green = 0, logged = 0, beers = 0, alcoholFree = 0, riskDays = 0, trainings = 0;
+  let green = 0, logged = 0, provisional = 0, beers = 0, alcoholFree = 0, riskDays = 0, trainings = 0;
   let stepsSum = 0, stepsN = 0, kcalSum = 0, kcalN = 0, waterSum = 0, waterN = 0, scoreSum = 0;
   for (let i = 0; i < 7; i++) {
     const date = addDays(monday, i);
@@ -176,11 +201,12 @@ export function weekSummary(daysByDate, scores, goals, monday, today) {
     days.push({ date, day, score: sc, future });
     if (!hasEntry(day)) continue;
     logged++;
+    if (day.provisional) provisional++;
     scoreSum += sc.total;
     if (sc.status === 'green') green++;
     const b = day.beer_count || 0;
     beers += b;
-    if (b === 0) alcoholFree++;
+    if (b === 0 && !day.provisional) alcoholFree++; // unbestätigt zählt nicht als alkoholfrei
     if (b * BEER.alcoholG > RISK_DAY_G) riskDays++;
     if (day.gym_kraft || day.gym_kardio) trainings++;
     const st = effectiveSteps(day);
@@ -190,7 +216,7 @@ export function weekSummary(daysByDate, scores, goals, monday, today) {
     if (day.water_ml != null) { waterSum += day.water_ml; waterN++; }
   }
   return {
-    monday, days, green, logged, beers, alcoholFree, riskDays, trainings,
+    monday, days, green, logged, provisional, beers, alcoholFree, riskDays, trainings,
     goalGreen: g.green_days_per_week,
     reached: green >= g.green_days_per_week,
     avgScore: logged ? scoreSum / logged : null,

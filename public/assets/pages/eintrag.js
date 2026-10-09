@@ -1,4 +1,4 @@
-import { addDays, effectiveSteps, hasEntry, isValidDate, scoreDay, weekStart } from '../score.js';
+import { addDays, effectiveSteps, isConfirmed, isValidDate, scoreDay, weekStart } from '../score.js';
 import { animateIn, api, boot, confirmDialog, esc, fmt, fmtDate, fmtLong, icon, loadContext, ring, shell, statusLabel, toast } from '../app.js';
 
 shell({ page: 'eintrag', title: 'Eintragen', subtitle: 'Bewegung · Ernährung · Alkohol' });
@@ -12,7 +12,7 @@ boot(async main => {
   let date = new URLSearchParams(location.search).get('date');
   if (!isValidDate(date) || date > today) date = today;
   const day = daysByDate[date];
-  const exists = hasEntry(day);
+  const exists = isConfirmed(day);
   const syncSteps = synced[date] ?? null;
   const mfp = ctx.food[date] || null; // MyFitnessPal über Health Connect
 
@@ -154,7 +154,7 @@ boot(async main => {
   });
 
   // Liste der letzten Einträge
-  const recent = Object.values(daysByDate).filter(hasEntry).sort((a, b) => b.entry_date.localeCompare(a.entry_date)).slice(0, 10);
+  const recent = Object.values(daysByDate).filter(isConfirmed).sort((a, b) => b.entry_date.localeCompare(a.entry_date)).slice(0, 10);
   const list = document.getElementById('list');
   list.innerHTML = recent.length ? recent.map(d => {
     const s = scores[d.entry_date];

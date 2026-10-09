@@ -31,13 +31,13 @@ boot(async main => {
 
   <section class="card" data-reveal>
     <div class="week">${w.days.map((d, i) => `
-      <a class="wday st-${d.score.status} ${d.date === today ? 'today' : ''} ${d.future ? 'future' : ''}"
+      <a class="wday st-${d.score.status} ${d.score.provisional ? 'prov' : ''} ${d.date === today ? 'today' : ''} ${d.future ? 'future' : ''}"
          ${d.future ? '' : `href="/eintrag?date=${d.date}"`} title="${fmtDate(d.date)}: ${d.score.total ?? 'kein Eintrag'}">
         ${WD[i]}<b>${d.score.total ?? '–'}</b></a>`).join('')}</div>
     <div style="margin-top:18px">
       <div class="row" style="border:0;padding-top:0"><span>Grüne Tage</span><b><span id="g">0</span> von ${w.goalGreen} ${w.reached ? '✓' : ''}</b></div>
       <div class="progress ${w.reached ? '' : 'warn'}"><i data-w="${greenPct}"></i></div>
-      <p class="muted" style="font-size:.85rem;margin:10px 0 0">${w.logged} von ${isCurrent ? 7 - daysLeft : 7} Tagen eingetragen${
+      <p class="muted" style="font-size:.85rem;margin:10px 0 0">${w.logged - w.provisional} von ${isCurrent ? 7 - daysLeft : 7} Tagen bestätigt${w.provisional ? ` · ${w.provisional} vorläufig (Bier unbestätigt)` : ''}${
         isCurrent && !w.reached ? ` · noch ${daysLeft} ${daysLeft === 1 ? 'Tag' : 'Tage'}, ${Math.max(0, w.goalGreen - w.green)} grüne fehlen${w.goalGreen - w.green > daysLeft ? ' – diese Woche nicht mehr erreichbar' : ''}` : ''}</p>
     </div>
   </section>
