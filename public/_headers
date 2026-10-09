@@ -1,2 +1,4 @@
 /assets/*
-  Cache-Control: public, max-age=300, must-revalidate
+  Cache-Control: no-cache
+/*.html
+  Cache-Control: no-cache

@@ -527,11 +527,11 @@ details > summary::-webkit-details-marker { display: none; }
 
 /* Anfasser: kleines Punkteraster, dezent */
 .grip {
-  position: absolute; z-index: 3; border: 0; background: none; padding: 6px 10px; cursor: grab;
-  color: var(--muted); opacity: .35; line-height: 0; border-radius: 8px; touch-action: none;
+  position: absolute; z-index: 3; border: 0; background: none; padding: 7px 12px; cursor: grab;
+  color: var(--muted); opacity: .6; line-height: 0; border-radius: 8px; touch-action: none;
   transition: opacity .2s, background .2s; -webkit-tap-highlight-color: transparent;
 }
-.grip svg { width: 16px; height: 10px; display: block; }
+.grip svg { width: 18px; height: 11px; display: block; }
 .grip:hover, .grip:focus-visible { opacity: .9; background: var(--surface-2); outline: none; }
 .grip:active { cursor: grabbing; }
 .grip-top { top: 2px; left: 50%; transform: translateX(-50%); }
@@ -540,12 +540,14 @@ details > summary::-webkit-details-marker { display: none; }
 .blk:has(> .section-title) > .grip-top { top: -6px; }
 .grip-tile { top: 4px; right: 4px; padding: 6px; }
 .tile { position: relative; }
-@media (hover: hover) { .grip { opacity: .2; } .blk:hover > .grip, .tile:hover > .grip { opacity: .55; } }
+@media (hover: hover) { .grip { opacity: .3; } .blk:hover > .grip, .tile:hover > .grip { opacity: .7; } }
 
 .dragging { z-index: 20; position: relative; cursor: grabbing; }
 .dragging > .card, .dragging > .hero, .tile.dragging { box-shadow: 0 18px 40px rgba(20, 30, 50, .22); }
 .blk.dragging { transition: none; }
 .tile.dragging { background: var(--surface); outline: 2px solid var(--accent-soft); border-radius: 10px; }
+[data-sort] { position: relative; }
+.dragging { will-change: transform; }
 .sorting { user-select: none; -webkit-user-select: none; }
 .sorting .blk:not(.dragging), .sorting .tile:not(.dragging) { transition: none; }
 .tiles.sorting { overflow: visible; }

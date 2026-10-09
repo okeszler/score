@@ -17,7 +17,7 @@ const FIELDS = [
 ];
 
 boot(async main => {
-  const [ctx, sync, keys, bioOk] = await Promise.all([loadContext(1), api('/api/sync'), api('/api/webauthn/credentials'), passkeySupported()]);
+  const [ctx, sync, keys, bioOk, ver] = await Promise.all([loadContext(1), api('/api/sync'), api('/api/webauthn/credentials'), passkeySupported(), api('/api/version').catch(() => null)]);
   const g = ctx.goals;
 
   main.innerHTML = `
@@ -71,7 +71,7 @@ boot(async main => {
       </section>
 
       <section class="card" data-reveal>
-        <div class="card-title">Darstellung & Konto</div>
+        <div class="card-title">Darstellung & Konto <span class="muted" style="text-transform:none;letter-spacing:0">Version ${esc(ver?.commit || '–')}</span></div>
         <div class="btn-row">
           <button class="btn secondary" id="theme" style="flex:1">${icon(currentTheme() === 'dark' ? 'sun' : 'moon')} ${currentTheme() === 'dark' ? 'Hell' : 'Dunkel'}</button>
           <button class="btn danger" id="logout" style="flex:1">${icon('logout')} Abmelden</button>
