@@ -14,21 +14,38 @@ export function applyOrder(container, itemSelector, order) {
 }
 
 export function makeSortable(container, { itemSelector, onChange }) {
-  const items = () => [...container.querySelectorAll(`:scope > ${itemSelector}`)];
+  const all = () => [...container.querySelectorAll(`:scope > ${itemSelector}`)];
+  // Reihenfolge nur über CSS `order`: das DOM bleibt unverändert. Umhängen im DOM würde
+  // alle CSS-Animationen darin neu starten (Balken, Ringe, Einblenden) – das war das Flackern.
+  all().forEach((el, i) => { el.style.order = i; });
+  const items = () => all().sort((a, b) => a.style.order - b.style.order);
   const order = () => items().map(el => el.dataset.id);
+  const setOrder = list => list.forEach((el, i) => { el.style.order = i; });
 
-  // FLIP: Positionen merken, DOM ändern, dann von alt nach neu animieren
-  const flip = (mutate, except) => {
-    const before = new Map(items().map(el => [el, el.getBoundingClientRect()]));
-    mutate();
-    for (const el of items()) {
+  // Layout-Position ohne transform (laufende Animationen verfälschen getBoundingClientRect nicht)
+  const box = el => {
+    const c = container.getBoundingClientRect();
+    const left = c.left + container.clientLeft + el.offsetLeft, top = c.top + container.clientTop + el.offsetTop;
+    return { left, top, right: left + el.offsetWidth, bottom: top + el.offsetHeight, width: el.offsetWidth, height: el.offsetHeight };
+  };
+
+  // FLIP: Positionen merken, Reihenfolge ändern, dann von alt nach neu gleiten
+  const flip = (list, except) => {
+    const before = new Map(list.map(el => [el, el.getBoundingClientRect()]));
+    setOrder(list);
+    for (const el of list) {
       if (el === except) continue;
-      const a = before.get(el), b = el.getBoundingClientRect();
-      if (!a) continue;
+      const a = before.get(el), b = box(el);
       const dx = a.left - b.left, dy = a.top - b.top;
-      if (!dx && !dy) continue;
-      el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.22,1,.36,1)' });
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
+      el.getAnimations().forEach(x => x.id === 'flip' && x.cancel());
+      el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 240, easing: 'cubic-bezier(.22,1,.36,1)', id: 'flip' });
     }
+  };
+  const move = (el, to) => {
+    const list = items().filter(x => x !== el);
+    list.splice(to, 0, el);
+    return list;
   };
 
   container.addEventListener('click', e => { if (e.target.closest('.grip')) e.preventDefault(); }, true);
@@ -41,74 +58,84 @@ export function makeSortable(container, { itemSelector, onChange }) {
     if (!el?.matches(itemSelector) || el.parentElement !== container) return;
     e.preventDefault();
     e.stopPropagation();
-    const up = e.key === 'ArrowUp' || e.key === 'ArrowLeft';
-    const sib = up ? el.previousElementSibling : el.nextElementSibling;
-    if (!sib || !sib.matches(itemSelector)) return;
-    flip(() => (up ? sib.before(el) : sib.after(el)));
-    g.focus();
+    const list = items(), i = list.indexOf(el);
+    const to = e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? i - 1 : i + 1;
+    if (to < 0 || to >= list.length) return;
+    flip(move(el, to));
     onChange?.(order());
   });
 
   container.addEventListener('pointerdown', e => {
     const g = e.target.closest('.grip');
     if (!g || e.button > 0) return;
-    const el = g.parentElement; // der Anfasser gehört direkt zu seinem Element
+    const el = g.parentElement;
     if (!el?.matches(itemSelector) || el.parentElement !== container) return; // verschachtelte Bereiche trennen
     e.preventDefault();
     e.stopPropagation();
+    try { g.setPointerCapture(e.pointerId); } catch { /* ältere Browser */ }
 
     const start = order().join();
-    const r0 = el.getBoundingClientRect();
-    const grabX = e.clientX - r0.left, grabY = e.clientY - r0.top;
-    let tx = 0, ty = 0, px = e.clientX, py = e.clientY, raf;
-    el.style.animation = 'none'; // Einblend-Animation würde transform überschreiben
+    const b0 = box(el);
+    const grabX = e.clientX - b0.left, grabY = e.clientY - b0.top;
+    let tx = 0, ty = 0, px = e.clientX, py = e.clientY, lastX = px, lastY = py, dirX = 0, dirY = 0, dirty = true, raf;
+    el.getAnimations().forEach(a => a.id === 'flip' && a.cancel());
+    el.style.animation = 'none'; // Einblend-Animation (fill: forwards) würde transform überschreiben
     el.style.opacity = '1';
     el.classList.add('dragging');
     container.classList.add('sorting');
 
     const place = () => {
-      const r = el.getBoundingClientRect();
-      tx = px - grabX - (r.left - tx);
-      ty = py - grabY - (r.top - ty);
-      el.style.transform = `translate(${tx}px, ${ty}px)`;
+      const b = box(el);
+      tx = px - grabX - b.left;
+      ty = py - grabY - b.top;
+      el.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
     };
     const reorder = () => {
-      for (const other of items()) {
+      const list = items(), from = list.indexOf(el);
+      for (const other of list) {
         if (other === el) continue;
-        const r = other.getBoundingClientRect();
+        const r = box(other);
         if (px < r.left || px > r.right || py < r.top || py > r.bottom) continue;
-        const after = el.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING;
-        // erst umsortieren, wenn der Zeiger über die Mitte des Nachbarn hinaus ist
-        const pastMid = after ? (py > r.top + r.height / 2 || px > r.left + r.width / 2) : (py < r.top + r.height / 2 || px < r.left + r.width / 2);
-        if (!pastMid) return;
-        flip(() => (after ? other.after(el) : other.before(el)), el);
+        const to = list.indexOf(other), forward = to > from;
+        const me = box(el);
+        const sameRow = me.top < r.bottom - 1 && me.bottom > r.top + 1;
+        // erst über die Mitte des Nachbarn hinaus – und nur in Zugrichtung (verhindert Hin-und-her-Springen)
+        const ok = sameRow
+          ? (forward ? px > r.left + r.width / 2 && dirX >= 0 : px < r.left + r.width / 2 && dirX <= 0)
+          : (forward ? py > r.top + r.height / 2 && dirY >= 0 : py < r.top + r.height / 2 && dirY <= 0);
+        if (ok) flip(move(el, to), el);
         return;
       }
     };
-    // Automatisch scrollen am Bildschirmrand
+    // ein Durchlauf pro Bild: Auto-Scroll am Rand, Position, Umsortieren
     const tick = () => {
       const edge = 70, h = window.innerHeight;
       const v = py < edge ? -Math.ceil((edge - py) / 6) : py > h - edge - 70 ? Math.ceil((py - (h - edge - 70)) / 6) : 0;
-      if (v) { window.scrollBy(0, v); place(); reorder(); }
+      if (v) { window.scrollBy(0, v); dirty = true; }
+      if (dirty) { dirty = false; reorder(); place(); }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
 
-    const move = ev => { px = ev.clientX; py = ev.clientY; place(); reorder(); };
+    const onMove = ev => {
+      px = ev.clientX; py = ev.clientY;
+      if (Math.abs(px - lastX) > 2) { dirX = Math.sign(px - lastX); lastX = px; }
+      if (Math.abs(py - lastY) > 2) { dirY = Math.sign(py - lastY); lastY = py; }
+      dirty = true;
+    };
     const end = () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', end);
       window.removeEventListener('pointercancel', end);
-      const from = `translate(${tx}px, ${ty}px)`;
+      const from = `translate3d(${tx}px, ${ty}px, 0)`;
       el.style.transform = '';
-      el.classList.remove('dragging');
       container.classList.remove('sorting');
-      el.animate([{ transform: from }, { transform: 'none' }], { duration: 200, easing: 'cubic-bezier(.22,1,.36,1)' });
+      const a = el.animate([{ transform: from }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.22,1,.36,1)', id: 'flip' });
+      a.onfinish = a.oncancel = () => el.classList.remove('dragging');
       if (order().join() !== start) onChange?.(order());
     };
-    // am Fenster lauschen: beim Umhängen im DOM ginge ein Pointer-Capture verloren
-    window.addEventListener('pointermove', move);
+    window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('pointerup', end);
     window.addEventListener('pointercancel', end);
   });
