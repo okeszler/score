@@ -2,7 +2,7 @@ import { downloadFile, FormatError, getAccessToken, listHealthFiles, parseNutrit
 import { json, handler, HttpError } from '../../lib/http.js';
 
 const MAX_DOWNLOADS = 4; // pro Aufruf – große 30-Tage-Exporte kosten CPU-Zeit
-const WEIGHT_CAT = 'gewicht2'; // v2: importiert jetzt auch Körperfett (alte Imports werden einmal nachgeholt)
+const WEIGHT_CAT = 'gewicht3'; // v3: auch Muskelmasse, Körperwasser, Grundumsatz (ältere Imports werden einmal nachgeholt)
 
 export const onRequestGet = handler(async ({ env }) => {
   const last = await env.DB.prepare('SELECT MAX(imported_at) AS at, COUNT(*) AS n FROM sync_files').first();
@@ -105,10 +105,12 @@ async function runSync(env) {
       } else {
         const rows = parseWeightCsv(text);
         for (const r of rows) {
-          stmts.push(env.DB.prepare(`INSERT INTO sync_weight_readings (entry_date, reading_time, weight_kg, body_fat_pct)
-            VALUES (?,?,?,?) ON CONFLICT(entry_date, reading_time, weight_kg)
-            DO UPDATE SET body_fat_pct = COALESCE(body_fat_pct, excluded.body_fat_pct)`)
-            .bind(r.entry_date, r.reading_time, r.weight_kg, r.body_fat_pct));
+          stmts.push(env.DB.prepare(`INSERT INTO sync_weight_readings
+              (entry_date, reading_time, weight_kg, body_fat_pct, muscle_kg, body_water_kg, bmr_kcal)
+            VALUES (?,?,?,?,?,?,?) ON CONFLICT(entry_date, reading_time, weight_kg) DO UPDATE SET
+              body_fat_pct = COALESCE(body_fat_pct, excluded.body_fat_pct), muscle_kg = COALESCE(muscle_kg, excluded.muscle_kg),
+              body_water_kg = COALESCE(body_water_kg, excluded.body_water_kg), bmr_kcal = COALESCE(bmr_kcal, excluded.bmr_kcal)`)
+            .bind(r.entry_date, r.reading_time, r.weight_kg, r.body_fat_pct, r.muscle_kg, r.body_water_kg, r.bmr_kcal));
         }
         report.weightReadings += rows.length;
         stmts.push(markDone(f, WEIGHT_CAT));

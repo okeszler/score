@@ -41,3 +41,14 @@ test('Ernährungs-CSV (MyFitnessPal über Health Sync): Tagessummen', async () =
     + '2026.10.09 08:00:00,08:00:00,1,null,null,300,10,0,5,0,2,20,0\n';
   assert.deepEqual(parseNutritionCsv(csv), { '2026-10-08': { kcal: 1211, protein: 125 }, '2026-10-09': { kcal: 300, protein: 20 } });
 });
+
+test('Gewicht-CSV: Körperwasser, Grundumsatz, Muskelmasse (0 = nicht gemessen)', () => {
+  const csv = 'Datum,Zeit,Gewicht,Körperfettanteil,Körperfettmasse,Fettfreier Prozentsatz,Fettfreie Masse,Skelettmuskelanteil,Skelettmuskelmasse,Muskelmasse-Prozentsatz,Muskelmasse,Knochenmasse,Gesamtkörperwasser,Grundumsatz\n'
+    + '2026.10.09 08:23:41,08:23:41,"94.9","22.817118","0.0","0.0","0.0","0.0","0.0","0.0","0.0","0.0","53.781723","1952"\n'
+    + '2026.10.10 08:00:00,08:00:00,"94.5","22.5","0.0","0.0","0.0","0.0","38.2","0.0","0.0","0.0","53.5","1950"\n';
+  const [a, b] = parseWeightCsv(csv);
+  assert.equal(a.body_water_kg, 53.781723);
+  assert.equal(a.bmr_kcal, 1952);
+  assert.equal(a.muscle_kg, null);
+  assert.equal(b.muscle_kg, 38.2); // Skelettmuskelmasse als Ersatz
+});
