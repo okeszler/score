@@ -12,7 +12,8 @@ Wochenziel, Gewichtstrend und Health-Connect-Sync aus Google Drive.
 | `/` Heute | Gewicht & Fortschritt zum Ziel, Score heute, Kacheln (Schritte, kcal, Bier, grüne Tage), Bewegung 14 Tage, „Noch ein Bier?“-Rechner |
 | `/eintrag` | Tageseintrag mit Live-Score-Vorschau, Tag vor/zurück, letzte Einträge |
 | `/woche` | Woche mit Ampel, Wochenziel, Streaks, Schnitte, Bierkonsum & Alkohol |
-| `/gewicht` | Verlauf (30 T / 90 T / alles), Trend, Prognose, Szenarien, Körperfett, Messungen |
+| `/gewicht` (Körper) | Gewicht (30 T / 90 T / alles), Trend, Prognose, Körperzusammensetzung (Fett, Muskel, Wasser, Grundumsatz), Messungen |
+| `/gesundheit` | Blutdruck (ESC/ESH-Ampel), Ruhepuls, Schlaf (Phasen, Dauer), Blutwerte (frei benannt, Verlauf), Aktivitäten |
 | `/verlauf` | 13-Wochen-Kalender, Ø Wochenscore, Ø Wochengewicht, Zusammenhänge (Tag nach Bier) |
 | `/einstellungen` | Ziele, Health Sync, Theme, Abmelden, Score-Erklärung |
 
@@ -65,6 +66,17 @@ Ordner haben. Der Sync
   (alternativ in den Einstellungen). Danach fragt die Login-Seite auf diesem Gerät direkt den Fingerabdruck ab.
   Gespeichert wird nur der öffentliche Schlüssel (`webauthn_credentials`); Prüfung in `lib/webauthn.js`
   (Origin, RP-ID, Nutzer-Verifikation, Signatur, Zähler, zeitlich begrenzte signierte Challenge).
+
+## Gesundheitszentrale (ehemals Health Tracker)
+
+Score hat den separaten Health Tracker (`okeszler/health-tracker`) übernommen:
+- **Sync** liest zusätzlich Puls, Schlaf, Blutdruck (Samsung Health) und Aktivitäten (Ordner „Health Sync Aktivitäten“).
+  Puls wird als Stundenwerte gespeichert (`sync_pulse_hourly`, ~24 statt ~750 Zeilen/Tag), Schlaf als Segmente,
+  jede Datei mit **einem** Statement (`json_each`); unveränderte Zeilen kosten keine Schreibvorgänge (D1-Limit).
+- **Ruhepuls** = Ø Puls während der Hauptnacht, **Nächte** werden aus Schlafsegmenten gebildet (`public/assets/health.js`).
+- **Blutwerte** (`lab_results`) und **Blutdruck** (`blood_pressure`, manuell + Samsung Health) mit Erfassung in der App.
+- **CSV-Export** unter Einstellungen: Tage, Körper, Blutdruck, Blutwerte.
+- Datenübernahme: `scripts/migrate_health_tracker.py` (liest den Health Tracker nur, erzeugt SQL für Score).
 
 ## Ernährung (MyFitnessPal)
 

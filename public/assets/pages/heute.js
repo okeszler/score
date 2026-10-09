@@ -1,11 +1,12 @@
 import { addDays, beerDecision, daysBetween, effectiveKcal, effectiveSteps, hasEntry, weekStart, weekSummary, weightTrend, activeStreak, BEER } from '../score.js';
 import { animateIn, api, boot, countUp, esc, fmt, fmtDate, fmtLong, icon, loadContext, modal, ring, shell, statusLabel, toast } from '../app.js';
 import { lineChart, sparkline } from '../charts.js';
+import { bpCategory } from '../health.js';
 
 shell({ page: 'heute', title: 'Hallo Oliver', subtitle: 'Mein Weg zu 85 kg' });
 
 boot(async main => {
-  const ctx = await loadContext(35);
+  const [ctx, health] = await Promise.all([loadContext(35), api(`/api/health?from=${addDays(new Date().toISOString().slice(0, 10), -30)}`).catch(() => null)]);
   const { today, goals, daysByDate, scores, lastWeight, firstWeight, synced } = ctx;
   const day = daysByDate[today];
   const sc = scores[today];
@@ -99,6 +100,8 @@ boot(async main => {
     </a>
   </div>
 
+  ${health ? healthRow(health) : ''}
+
   <div class="grid grid-2" style="margin-top:16px">
     <section class="card" data-reveal>
       <div class="card-title">Bewegung · 14 Tage <a href="/verlauf">Verlauf</a></div>
@@ -187,4 +190,20 @@ function openBeer(ctx) {
       } catch (ex) { toast(ex.message, 'error'); e.target.disabled = false; }
     }),
   });
+}
+
+function healthRow(h) {
+  const hm = s => `${Math.floor(s / 3600)}:${String(Math.round((s % 3600) / 60)).padStart(2, '0')}`;
+  const rest = h.pulse.filter(p => p.resting != null).at(-1);
+  const night = h.nights.at(-1);
+  const bp = h.bloodPressure.at(-1);
+  const cat = bp ? bpCategory(bp.systolic, bp.diastolic) : null;
+  if (!rest && !night && !bp) return '';
+  return `
+  <div class="section-title">Gesundheit</div>
+  <div class="tiles tiles-3" data-reveal>
+    <a class="tile" href="/gesundheit#puls"><div class="tile-value">${rest ? fmt(rest.resting, 0) : '–'}<span class="unit">bpm</span></div><div class="tile-label">Ruhepuls</div></a>
+    <a class="tile" href="/gesundheit#schlaf"><div class="tile-value">${night ? hm(night.asleepSeconds) : '–'}<span class="unit">h</span></div><div class="tile-label">Schlaf letzte Nacht</div></a>
+    <a class="tile" href="/gesundheit#bp"><div class="tile-value">${bp ? `${bp.systolic}/${bp.diastolic}` : '–'}</div><div class="tile-label">${cat ? `<span class="pill ${cat.status}" style="font-size:.7rem;padding:2px 8px">${cat.label}</span>` : 'Blutdruck'}</div></a>
+  </div>`;
 }

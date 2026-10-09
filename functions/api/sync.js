@@ -1,7 +1,11 @@
-import { downloadFile, FormatError, getAccessToken, listHealthFiles, parseNutritionCsv, parseStepsCsv, parseWeightCsv, rangeFromName } from '../../lib/drive.js';
+import { downloadFile, FormatError, getAccessToken, listHealthFiles, rangeFromName } from '../../lib/drive.js';
+import { importStatement } from '../../lib/importers.js';
 import { json, handler, HttpError } from '../../lib/http.js';
 
-const MAX_DOWNLOADS = 4; // pro Aufruf – große 30-Tage-Exporte kosten CPU-Zeit
+const MAX_DOWNLOADS = 10; // pro Aufruf
+const MAX_BYTES = 3_000_000; // große 30-Tage-Exporte (Puls ~0,9 MB) kosten CPU-Zeit
+// Kategorien mit rollierenden 30-Tage-Exporten: ältere, vollständig abgedeckte Dateien überspringen
+const RANGE_CATS = new Set(['schritte', 'puls', 'schlaf']);
 const WEIGHT_CAT = 'gewicht3'; // v3: auch Muskelmasse, Körperwasser, Grundumsatz (ältere Imports werden einmal nachgeholt)
 
 export const onRequestGet = handler(async ({ env }) => {
@@ -61,7 +65,7 @@ async function runSync(env) {
   // bereits verarbeiteten Export liegt, muss nicht heruntergeladen werden.
   pending.sort((a, b) => b.modifiedTime.localeCompare(a.modifiedTime));
   const covered = [];
-  const report = { imported: [], skipped: 0, stepsDays: 0, weightReadings: 0, errors: [] };
+  const report = { imported: [], skipped: 0, stepsDays: 0, weightReadings: 0, nutritionDays: 0, pulseHours: 0, sleepSegments: 0, bloodPressure: 0, activities: 0, errors: [] };
   let downloads = 0;
 
   const markDone = (f, cat) => env.DB.prepare(`INSERT INTO sync_files (category, drive_file_id, file_name, modified_time)
@@ -69,53 +73,23 @@ async function runSync(env) {
       modified_time = excluded.modified_time, imported_at = datetime('now')`)
     .bind(cat, f.id, f.name, f.modifiedTime);
 
+  let bytes = 0;
   for (const f of pending) {
     const range = rangeFromName(f.name);
-    if (f.category === 'schritte' && range && covered.some(c => c.from <= range.from && c.to >= range.to)) {
-      await markDone(f, 'schritte').run();
+    if (RANGE_CATS.has(f.category) && range && covered.some(c => c.cat === f.category && c.from <= range.from && c.to >= range.to)) {
+      await markDone(f, f.category).run();
       report.skipped++;
       continue;
     }
-    if (downloads >= MAX_DOWNLOADS) break;
+    const size = Number(f.size) || 0;
+    if (downloads >= MAX_DOWNLOADS || (downloads > 0 && bytes + size > MAX_BYTES)) break;
     downloads++;
+    bytes += size;
     try {
       const text = await downloadFile(token, f.id);
-      const stmts = [];
-      if (f.category === 'schritte') {
-        const sums = parseStepsCsv(text);
-        for (const [date, steps] of Object.entries(sums)) {
-          // MAX: ein späterer Export enthält den Tag vollständiger als ein früherer
-          stmts.push(env.DB.prepare(`INSERT INTO sync_steps_daily (entry_date, steps) VALUES (?, ?)
-            ON CONFLICT(entry_date) DO UPDATE SET steps = MAX(steps, excluded.steps), updated_at = datetime('now')`).bind(date, steps));
-        }
-        report.stepsDays += stmts.length;
-        if (range) covered.push(range);
-        stmts.push(markDone(f, 'schritte'));
-      } else if (f.category === 'ernaehrung') {
-        const days = parseNutritionCsv(text);
-        for (const [date, n] of Object.entries(days)) {
-          // Neuester Export gewinnt (Mahlzeiten können in MyFitnessPal auch gelöscht werden)
-          stmts.push(env.DB.prepare(`INSERT INTO sync_nutrition_daily (entry_date, kcal, protein_g, src_time) VALUES (?,?,?,?)
-            ON CONFLICT(entry_date) DO UPDATE SET kcal = excluded.kcal, protein_g = excluded.protein_g,
-              src_time = excluded.src_time, updated_at = datetime('now')
-            WHERE excluded.src_time >= sync_nutrition_daily.src_time`).bind(date, n.kcal, n.protein, f.modifiedTime));
-        }
-        report.nutritionDays = (report.nutritionDays || 0) + Object.keys(days).length;
-        stmts.push(markDone(f, 'ernaehrung'));
-      } else {
-        const rows = parseWeightCsv(text);
-        for (const r of rows) {
-          stmts.push(env.DB.prepare(`INSERT INTO sync_weight_readings
-              (entry_date, reading_time, weight_kg, body_fat_pct, muscle_kg, body_water_kg, bmr_kcal)
-            VALUES (?,?,?,?,?,?,?) ON CONFLICT(entry_date, reading_time, weight_kg) DO UPDATE SET
-              body_fat_pct = COALESCE(body_fat_pct, excluded.body_fat_pct), muscle_kg = COALESCE(muscle_kg, excluded.muscle_kg),
-              body_water_kg = COALESCE(body_water_kg, excluded.body_water_kg), bmr_kcal = COALESCE(bmr_kcal, excluded.bmr_kcal)`)
-            .bind(r.entry_date, r.reading_time, r.weight_kg, r.body_fat_pct, r.muscle_kg, r.body_water_kg, r.bmr_kcal));
-        }
-        report.weightReadings += rows.length;
-        stmts.push(markDone(f, WEIGHT_CAT));
-      }
-      await env.DB.batch(stmts);
+      const stmt = importStatement(env.DB, f, text, report);
+      await env.DB.batch([...(stmt ? [stmt] : []), markDone(f, f.category === 'gewicht' ? WEIGHT_CAT : f.category)]);
+      if (RANGE_CATS.has(f.category) && range) covered.push({ cat: f.category, ...range });
       report.imported.push(f.name);
     } catch (e) {
       report.errors.push(`${f.name}: ${e.message}`);

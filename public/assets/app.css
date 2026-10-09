@@ -492,3 +492,20 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .comp span { font-size: .78rem; color: var(--muted); }
 .comp small.good { color: var(--good); }
 .comp small.bad { color: var(--bad); }
+
+/* Schlafphasen-Balken */
+.sleepbar { display: flex; height: 26px; border-radius: 8px; overflow: hidden; background: var(--surface-2); }
+.sleepbar i { display: block; height: 100%; min-width: 1px; transform-origin: left; animation: grow-x .8s var(--ease) both; }
+@keyframes grow-x { from { transform: scaleX(0); } }
+details > summary { list-style: none; cursor: pointer; }
+details > summary::-webkit-details-marker { display: none; }
+.tiles.tiles-3 { grid-template-columns: repeat(3, 1fr); }
+.tiles.tiles-3 .tile { min-height: 96px; padding: 14px; }
+.tiles.tiles-3 .tile-value { font-size: 1.45rem; }
+.lab-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+@media (min-width: 900px) { .lab-grid { grid-template-columns: repeat(4, 1fr); } }
+.lab-cell { text-align: left; border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 10px 12px; cursor: pointer; display: grid; gap: 2px; }
+.lab-cell:hover { border-color: var(--accent); }
+.lab-cell span { font-size: .78rem; color: var(--muted); }
+.lab-cell b { font-weight: 500; }
+.list.wrap .meta span { white-space: normal; }

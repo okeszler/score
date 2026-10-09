@@ -2,7 +2,7 @@ import { addDays, daysBetween, weightTrend, KCAL_PER_KG_FAT } from '../score.js'
 import { api, boot, confirmDialog, countUp, fmt, fmtDate, fmtLong, icon, loadContext, shell, toast } from '../app.js';
 import { lineChart } from '../charts.js';
 
-shell({ page: 'gewicht', title: 'Gewicht', subtitle: 'Verlauf, Trend & Prognose' });
+shell({ page: 'gewicht', title: 'Körper', subtitle: 'Gewicht, Zusammensetzung & Prognose' });
 
 let range = 90;
 try { range = Number(localStorage.getItem('weightRange')) || 90; } catch {}
@@ -15,17 +15,19 @@ boot(async main => {
   const waters = weights.filter(w => w.body_water_kg != null);
   const muscles = weights.filter(w => w.muscle_kg != null);
   const lastOf = (arr, k) => [...arr].reverse().find(w => w[k] != null) || null;
-  const firstOf = (arr, k) => arr.find(w => w[k] != null) || null;
+  // Vergleichsbasis: erste Messung der letzten 90 Tage (die Historie reicht bis 2018 zurück)
+  const since = addDays(today, -90);
+  const firstOf = (arr, k) => arr.find(w => w[k] != null && w.entry_date >= since) || null;
   const lw = lastWeight, lf = lastFat, lwat = lastOf(waters, 'body_water_kg'), lmus = lastOf(muscles, 'muscle_kg');
   const lbmr = lastOf(weights, 'bmr_kcal');
   // Fett- und fettfreie Masse aus Gewicht × Körperfett derselben Messung
   const fatMass = w => (w?.weight_kg != null && w?.body_fat_pct != null ? (w.weight_kg * w.body_fat_pct) / 100 : null);
   const both = weights.filter(w => w.weight_kg != null && w.body_fat_pct != null);
-  const lb = both[both.length - 1] || null, fb = both[0] || null;
+  const lb = both[both.length - 1] || null, fb = both.find(w => w.entry_date >= since) || null;
   const delta = (now, then, d = 1, unit = '', upIsGood = false) => {
     if (now == null || then == null || now === then) return '';
     const x = now - then;
-    return `<small class="${(x > 0) === upIsGood ? 'good' : 'bad'}" style="display:block;font-size:.75rem">${x > 0 ? '+' : ''}${fmt(x, d)}${unit} seit Start</small>`;
+    return `<small class="${(x > 0) === upIsGood ? 'good' : 'bad'}" style="display:block;font-size:.75rem">${x > 0 ? '+' : ''}${fmt(x, d)}${unit} in 90 Tagen</small>`;
   };
   const start = goals.start_weight_kg ?? firstWeight?.weight_kg ?? null;
   const min = ws.length ? Math.min(...ws.map(w => w.weight_kg)) : null;
@@ -72,6 +74,8 @@ boot(async main => {
           <div class="field"><label for="d">Datum</label><input id="d" type="date" name="date" value="${today}" max="${today}" required></div>
           <div class="field"><label for="kg">Gewicht</label><div class="input-wrap"><input id="kg" name="weight_kg" type="number" inputmode="decimal" step="0.1" min="30" max="300" placeholder="${lastWeight ? fmt(lastWeight.weight_kg, 1) : ''}"><span class="suffix">kg</span></div></div>
           <div class="field"><label for="bf">Körperfett</label><div class="input-wrap"><input id="bf" name="body_fat_pct" type="number" inputmode="decimal" step="0.1" min="2" max="70"><span class="suffix">%</span></div></div>
+          <div class="field"><label for="mus">Muskelmasse</label><div class="input-wrap"><input id="mus" name="muscle_kg" type="number" inputmode="decimal" step="0.1" min="10" max="120" placeholder="${lmus ? fmt(lmus.muscle_kg, 1) : 'Samsung Health'}"><span class="suffix">kg</span></div></div>
+          <div class="field"><label for="wat">Körperwasser</label><div class="input-wrap"><input id="wat" name="body_water_kg" type="number" inputmode="decimal" step="0.1" min="15" max="120"><span class="suffix">kg</span></div></div>
         </div>
         <button class="btn block" type="submit">Speichern</button>
       </form>
@@ -79,12 +83,12 @@ boot(async main => {
   </div>
 
   <section class="card" data-reveal style="margin-top:16px">
-    <div class="card-title">Körperzusammensetzung <span class="muted" style="text-transform:none;letter-spacing:0">Samsung Health</span></div>
+    <div class="card-title">Körperzusammensetzung <a href="/api/export?type=koerper" style="text-transform:none">CSV</a></div>
     <div class="comp">
       <div><b>${lf ? fmt(lf.body_fat_pct, 1) : '–'}<small> %</small></b><span>Körperfett</span>${delta(lf?.body_fat_pct, firstOf(fats, 'body_fat_pct')?.body_fat_pct, 1, ' %')}</div>
       <div><b>${lb ? fmt(fatMass(lb), 1) : '–'}<small> kg</small></b><span>Fettmasse</span>${delta(fatMass(lb), fatMass(fb), 1, ' kg')}</div>
       <div><b>${lb ? fmt(lb.weight_kg - fatMass(lb), 1) : '–'}<small> kg</small></b><span>Fettfreie Masse</span></div>
-      <div><b>${lmus ? fmt(lmus.muscle_kg, 1) : '–'}<small> kg</small></b><span>Muskelmasse${lmus ? '' : ' (nicht geliefert)'}</span>${delta(lmus?.muscle_kg, firstOf(muscles, 'muscle_kg')?.muscle_kg, 1, ' kg', true)}</div>
+      <div><b>${lmus ? fmt(lmus.muscle_kg, 1) : '–'}<small> kg</small></b><span>Muskelmasse${lmus ? '' : ' (manuell eintragen)'}</span>${delta(lmus?.muscle_kg, firstOf(muscles, 'muscle_kg')?.muscle_kg, 1, ' kg', true)}</div>
       <div><b>${lwat ? fmt(lwat.body_water_kg, 1) : '–'}<small> kg</small></b><span>Körperwasser${lwat?.weight_kg ? ` · ${fmt((lwat.body_water_kg / lwat.weight_kg) * 100, 0)} %` : ''}</span></div>
       <div><b>${lbmr ? fmt(lbmr.bmr_kcal) : '–'}<small> kcal</small></b><span>Grundumsatz</span></div>
     </div>
@@ -155,10 +159,10 @@ boot(async main => {
   const f = document.getElementById('f');
   f.addEventListener('submit', async e => {
     e.preventDefault();
-    if (!f.weight_kg.value && !f.body_fat_pct.value) { f.weight_kg.setAttribute('aria-invalid', 'true'); f.weight_kg.focus(); return toast('Gewicht oder Körperfett angeben', 'error'); }
+    if (!f.weight_kg.value && !f.body_fat_pct.value && !f.muscle_kg.value && !f.body_water_kg.value) { f.weight_kg.setAttribute('aria-invalid', 'true'); f.weight_kg.focus(); return toast('Mindestens einen Wert angeben', 'error'); }
     if (![...f.elements].every(i => !i.checkValidity || i.checkValidity())) return toast('Bitte Eingaben prüfen', 'error');
     try {
-      await api(`/api/weight/${f.date.value}`, { method: 'PUT', body: { weight_kg: f.weight_kg.value, body_fat_pct: f.body_fat_pct.value } });
+      await api(`/api/weight/${f.date.value}`, { method: 'PUT', body: { weight_kg: f.weight_kg.value, body_fat_pct: f.body_fat_pct.value, muscle_kg: f.muscle_kg.value, body_water_kg: f.body_water_kg.value } });
       toast('Messung gespeichert', 'success');
       document.dispatchEvent(new CustomEvent('datachange'));
     } catch (ex) { toast(ex.message, 'error'); }
