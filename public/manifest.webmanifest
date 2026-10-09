@@ -7,5 +7,9 @@
   "background_color": "#2e3747",
   "theme_color": "#2e3747",
   "lang": "de",
-  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }],
+  "shortcuts": [
+    { "name": "+1 Bier", "short_name": "+1 Bier", "description": "Ein Bier (0,5 l) für heute eintragen", "url": "/?quick=bier" },
+    { "name": "+250 ml Wasser", "short_name": "+250 ml", "description": "250 ml Wasser für heute eintragen", "url": "/?quick=wasser" }
+  ]
 }

@@ -62,3 +62,21 @@ test('Schritte, Gewicht, Ernährung: unveränderte Zeilen kosten keine Schreibvo
   assert.equal((await run(db, 'ernaehrung', n)).written, 1);
   assert.equal((await run(db, 'ernaehrung', n, 'x', '2026-10-09T09:00:00Z')).written, 0);
 });
+
+test('Ernährung: neuerer Export ohne Protein, älterer Tagesexport füllt Protein nach', async () => {
+  const db = await setup();
+  const head = 'Datum,Zeit,Mahlzeit,Name,Beschreibung,kcal,Kohlenhydrate (Gramm),Zucker (Gramm)';
+  const range = `${head}\n2026.10.08 10:00:00,10:00:00,1,null,null,510.7,31.42,28.36\n`;
+  const daily = `${head},Protein (g)\n2026.10.08 10:00:00,10:00:00,1,null,null,510.7,31.42,28.36,84.88\n`;
+  assert.equal((await run(db, 'ernaehrung', range, 'r.csv', '2026-10-09T08:54:37Z')).written, 1);
+  assert.equal((await run(db, 'ernaehrung', daily, 'd.csv', '2026-10-09T08:54:29Z')).written, 1);
+  let r = await db.prepare('SELECT * FROM sync_nutrition_daily').first();
+  assert.deepEqual([r.kcal, r.protein_g, r.src_time], [511, 85, '2026-10-09T08:54:37Z']);
+  // erneut: keine Schreibvorgänge; älterer Export mit anderen kcal überschreibt nicht
+  assert.equal((await run(db, 'ernaehrung', range, 'r.csv', '2026-10-09T08:54:37Z')).written, 0);
+  assert.equal((await run(db, 'ernaehrung', daily.replace('510.7', '400'), 'd.csv', '2026-10-09T08:00:00Z')).written, 0);
+  // neuerer Export mit Protein gewinnt
+  assert.equal((await run(db, 'ernaehrung', daily.replace('84.88', '90'), 'n.csv', '2026-10-09T20:00:00Z')).written, 1);
+  r = await db.prepare('SELECT * FROM sync_nutrition_daily').first();
+  assert.equal(r.protein_g, 90);
+});

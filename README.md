@@ -84,6 +84,11 @@ Score hat den separaten Health Tracker (`okeszler/health-tracker`) übernommen:
 - **CSV-Export** unter Einstellungen: Tage, Körper, Blutdruck, Blutwerte.
 - Datenübernahme: `scripts/migrate_health_tracker.py` (liest den Health Tracker nur, erzeugt SQL für Score).
 
+## Schnelltasten
+
+Lange auf das App-Symbol drücken: **+1 Bier** (`/?quick=bier`) und **+250 ml Wasser** (`/?quick=wasser`)
+tragen sofort für heute ein (`manifest.webmanifest` → `shortcuts`).
+
 ## Ernährung (MyFitnessPal)
 
 MyFitnessPal schreibt Mahlzeiten nach Health Connect, Health Sync exportiert sie als
@@ -128,6 +133,11 @@ Gefundene Fehler und Logikprobleme, die in dieser Version behoben sind:
     kein Open Redirect, Server-Validierung aller Eingaben (Bereiche, Datum, Länge).
 
 ## Verbesserungsvorschläge (noch offen)
+
+- **Training automatisch aus Aktivitäten** (Merkliste): Samsung-Aktivitäten ≥ 20 min als Training werten?
+  Offen: Krafttraining wird nur erkannt, wenn es auf der Uhr gestartet wird; Auto-Erkennung (z. B. Spielen
+  am See als „Gehen“/„Dynamisches Training“) soll nicht ungewollt als Training zählen.
+- **Abend-Erinnerung** mit Antwort-Tasten (0 / 1 / 2+ Bier), nur wenn der Tag noch vorläufig ist.
 
 - **Auswertung „Bier → Nacht“** (vorgemerkt, Oliver sammelt erst Daten, Stand 10/2026): Ruhepuls und Tiefschlaf
   nach 0 / 1–2 / 3+ Bier vergleichen, dazu Schlafdauer vs. kcal am Folgetag. Uhr wird nicht jede Nacht getragen,
