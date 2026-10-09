@@ -92,6 +92,16 @@ export function effectiveKcal(day) {
   if (!day) return null;
   return day.calories_kcal ?? day.synced_kcal ?? null;
 }
+// Bier zählt halb zur Flüssigkeit (Alkohol treibt einen Teil wieder aus)
+export const BEER_FLUID_ML = 250;
+/** Flüssigkeit = Wasser + Bier × 250 ml; null, solange nichts eingetragen ist */
+export function effectiveFluid(day) {
+  if (!day) return null;
+  const beers = day.beer_count || 0;
+  if (day.water_ml == null && !beers) return null;
+  return (day.water_ml || 0) + beers * BEER_FLUID_ML;
+}
+
 export function effectiveProtein(day) {
   if (!day) return null;
   return day.protein_g ?? day.synced_protein ?? null;
@@ -154,7 +164,8 @@ export function scoreDay(day, goals, beersBefore = 0) {
   let ernaehrung = 0;
   if (kcal != null && kcal <= g.kcal_target) ernaehrung += 1;
   if (protein != null && protein >= g.protein_target) ernaehrung += 1;
-  if (day.water_ml != null && day.water_ml >= g.water_target) ernaehrung += 1;
+  const fluid = effectiveFluid(day);
+  if (fluid != null && fluid >= g.water_target) ernaehrung += 1;
 
   const beers = day.beer_count || 0;
   let alkohol = [3, 2, 1][beers] ?? 0;
@@ -213,7 +224,8 @@ export function weekSummary(daysByDate, scores, goals, monday, today) {
     if (st != null) { stepsSum += st; stepsN++; }
     const kc = effectiveKcal(day);
     if (kc != null) { kcalSum += kc; kcalN++; }
-    if (day.water_ml != null) { waterSum += day.water_ml; waterN++; }
+    const fl = effectiveFluid(day);
+    if (fl != null) { waterSum += fl; waterN++; }
   }
   return {
     monday, days, green, logged, provisional, beers, alcoholFree, riskDays, trainings,
