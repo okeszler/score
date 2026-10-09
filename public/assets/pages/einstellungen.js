@@ -84,7 +84,7 @@ boot(async main => {
     <div class="card-title">So wird der Score berechnet (0–10)</div>
     <div class="rows">
       <div class="row"><span><b>Bewegung</b> (max. 4)</span><b>Schritte ≥ 100 % Ziel: 3 · ≥ 75 %: 2 · ≥ 50 %: 1 · + Training: 1</b></div>
-      <div class="row"><span><b>Ernährung</b> (max. 3)</span><b>kcal ≤ Ziel: 1 · Protein ≥ Ziel: 1 · Wasser ≥ Ziel: 1</b></div>
+      <div class="row"><span><b>Ernährung</b> (max. 3)</span><b>kcal ≤ Ziel: 1 · Protein ≥ Ziel: 1 · Trinken ≥ Ziel: 1 (Bier zählt halb)</b></div>
       <div class="row"><span><b>Alkohol</b> (max. 3)</span><b>0 Bier: 3 · 1: 2 · 2: 1 · ab 3: 0 · Wochenbudget überschritten: 0</b></div>
       <div class="row"><span><b>Ampel</b></span><b><span class="pill green">ab 7</span> <span class="pill orange">ab 4</span> <span class="pill red">darunter</span></b></div>
     </div>

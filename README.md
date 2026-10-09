@@ -26,7 +26,7 @@ Vorläufige Tage sind in Woche/Verlauf gestrichelt markiert und zählen nicht al
 ## Score (0–10)
 
 - **Bewegung (max. 4):** Schritte ≥ 100 % Ziel = 3, ≥ 75 % = 2, ≥ 50 % = 1; Training +1
-- **Ernährung & Trinken (max. 3):** kcal ≤ Ziel +1, Protein ≥ Ziel +1, Wasser ≥ Ziel (Standard 2 l) +1
+- **Ernährung & Trinken (max. 3):** kcal ≤ Ziel +1, Protein ≥ Ziel +1, Trinken ≥ Ziel (Standard 2 l; Wasser + je Bier 250 ml, also halb) +1
 - **Alkohol (max. 3):** 0 Bier = 3, 1 = 2, 2 = 1, ab 3 = 0; Wochenbudget überschritten = 0
 - **Ampel:** Grün ≥ 7, Orange ≥ 4, sonst Rot. Tage ohne Eintrag sind grau.
 

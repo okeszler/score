@@ -1,4 +1,4 @@
-import { addDays, beerDecision, daysBetween, effectiveKcal, effectiveSteps, hasEntry, weekStart, weekSummary, weightTrend, activeStreak, BEER } from '../score.js';
+import { addDays, beerDecision, daysBetween, effectiveFluid, effectiveKcal, effectiveSteps, BEER_FLUID_ML, hasEntry, weekStart, weekSummary, weightTrend, activeStreak, BEER } from '../score.js';
 import { animateIn, api, boot, countUp, esc, fmt, fmtDate, fmtLong, icon, loadContext, modal, ring, shell, statusLabel, toast } from '../app.js';
 import { lineChart, sparkline } from '../charts.js';
 import { bpCategory } from '../health.js';
@@ -33,7 +33,8 @@ boot(async main => {
   const kcalOf = d => (daysByDate[d] ? effectiveKcal(daysByDate[d]) : ctx.food[d]?.kcal ?? null);
   const kcalSeries = last14.map(kcalOf);
   const kcalToday = kcalOf(today);
-  const water = day?.water_ml ?? 0;
+  const water = effectiveFluid(day) ?? 0;
+  const beerFluid = (day?.beer_count || 0) * BEER_FLUID_ML;
   const waterPct = Math.min(100, (water / goals.water_target) * 100);
 
   const beerPct = Math.min(100, (week.beers / Math.max(1, week.beerBudget)) * 100);
@@ -123,9 +124,9 @@ boot(async main => {
   </div>
   <div class="blk" data-id="water" data-span="1" data-reveal>${grip("grip-top")}
     <section class="card">
-      <div class="card-title"><span>Wasser heute</span><b style="text-transform:none;letter-spacing:0;color:var(--ink)"><span id="t-water">0</span> / ${fmt(goals.water_target)} ml</b></div>
+      <div class="card-title"><span>Trinken heute</span><b style="text-transform:none;letter-spacing:0;color:var(--ink)"><span id="t-water">0</span> / ${fmt(goals.water_target)} ml</b></div>
       <div class="progress ${waterPct >= 100 ? '' : 'warn'}" style="height:10px"><i data-w="${waterPct}" style="background:var(--blue)"></i></div>
-      <p class="muted" style="margin:10px 0 14px;font-size:.85rem">${waterPct >= 100 ? 'Ziel erreicht – +1 Punkt im Score ✓' : `Noch ${fmt(Math.max(0, goals.water_target - water))} ml bis zum Ziel (+1 Punkt)`}</p>
+      <p class="muted" style="margin:10px 0 14px;font-size:.85rem">${waterPct >= 100 ? 'Ziel erreicht – +1 Punkt im Score ✓' : `Noch ${fmt(Math.max(0, goals.water_target - water))} ml bis zum Ziel (+1 Punkt)`}${beerFluid ? `<br>inkl. ${fmt(beerFluid)} ml aus ${day.beer_count} Bier (zählt halb)` : ''}</p>
       <div class="btn-row">
         <button class="btn secondary" data-water="250" style="flex:1">+250 ml</button>
         <button class="btn secondary" data-water="500" style="flex:1">+500 ml</button>

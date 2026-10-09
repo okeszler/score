@@ -35,6 +35,9 @@ test('Ernährung: kcal im Ziel, Protein, Wasser – je 1 Punkt', () => {
   assert.equal(scoreDay(day('d', { water_ml: 1999 }), goals).parts.ernaehrung, 0);
   assert.equal(scoreDay(day('d', { water_ml: 2000 }), goals).parts.ernaehrung, 1);
   assert.equal(scoreDay(day('d', { water_ml: 1500 }), { water_target: 1500 }).parts.ernaehrung, 1);
+  // Bier zählt halb: 1500 ml Wasser + 2 Bier (je 250 ml) = 2000 ml
+  assert.equal(scoreDay(day('d', { water_ml: 1500, beer_count: 2 }), goals).parts.ernaehrung, 1);
+  assert.equal(scoreDay(day('d', { water_ml: 1500, beer_count: 1 }), goals).parts.ernaehrung, 0);
 });
 
 test('MyFitnessPal-Import als Fallback, manuelle Werte haben Vorrang', () => {

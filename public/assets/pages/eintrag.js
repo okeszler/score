@@ -54,7 +54,8 @@ boot(async main => {
           <div class="input-wrap"><input id="protein" name="protein_g" type="number" inputmode="numeric" min="0" max="600" value="${v('protein_g')}" placeholder="${mfp ? `MFP: ${fmt(mfp.protein)}` : `Ziel ≥ ${goals.protein_target}`}"><span class="suffix">g</span></div>
           ${mfp ? `<span class="hint">Leer lassen = MyFitnessPal (${fmt(mfp.protein)} g)</span>` : ''}</div>
         <div class="field"><label for="water">Wasser</label>
-          <div class="input-wrap"><input id="water" name="water_ml" type="number" inputmode="numeric" min="0" max="15000" step="250" value="${v('water_ml')}" placeholder="Ziel ≥ ${goals.water_target}"><span class="suffix">ml</span></div></div>
+          <div class="input-wrap"><input id="water" name="water_ml" type="number" inputmode="numeric" min="0" max="15000" step="250" value="${v('water_ml')}" placeholder="Ziel ≥ ${goals.water_target}"><span class="suffix">ml</span></div>
+          <span class="hint">Jedes Bier zählt zusätzlich mit 250 ml</span></div>
         <div class="field"><label>Bier (0,5 l)</label>
           <div class="stepper"><button type="button" data-step="-1" aria-label="Weniger Bier">−</button>
             <input name="beer_count" type="number" inputmode="numeric" min="0" max="40" value="${day?.beer_count ?? 0}" aria-label="Anzahl Bier">
