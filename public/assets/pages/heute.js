@@ -2,11 +2,16 @@ import { addDays, beerDecision, daysBetween, effectiveKcal, effectiveSteps, hasE
 import { animateIn, api, boot, countUp, esc, fmt, fmtDate, fmtLong, icon, loadContext, modal, ring, shell, statusLabel, toast } from '../app.js';
 import { lineChart, sparkline } from '../charts.js';
 import { bpCategory } from '../health.js';
+import { applyOrder, grip, makeSortable } from '../sortable.js';
 
 shell({ page: 'heute', title: 'Hallo Oliver', subtitle: 'Mein Weg zu 85 kg' });
 
 boot(async main => {
-  const [ctx, health] = await Promise.all([loadContext(35), api(`/api/health?from=${addDays(new Date().toISOString().slice(0, 10), -30)}`).catch(() => null)]);
+  const [ctx, health, settings] = await Promise.all([
+    loadContext(35),
+    api(`/api/health?from=${addDays(new Date().toISOString().slice(0, 10), -30)}`).catch(() => null),
+    api('/api/settings').then(r => r.settings).catch(() => ({})),
+  ]);
   const { today, goals, daysByDate, scores, lastWeight, firstWeight, synced } = ctx;
   const day = daysByDate[today];
   const sc = scores[today];
@@ -35,8 +40,9 @@ boot(async main => {
   const streak = activeStreak(scores, today);
 
   main.innerHTML = `
-  <div class="grid grid-3">
-    <section class="hero" data-reveal>
+  <div class="board" data-sort="home">
+  <div class="blk" data-id="hero" data-span="1" data-reveal>${grip("grip-top")}
+    <section class="hero">
       <div class="hero-top">
         <div class="hero-eyebrow">${fmtLong(today)}</div>
         <div class="hero-value"><span id="hw">–</span><span class="unit">kg</span></div>
@@ -52,8 +58,9 @@ boot(async main => {
         <div><b>${trend?.eta ? fmtDate(trend.eta, { month: 'short', year: '2-digit' }) : '–'}</b><span>Prognose 85 kg</span></div>
       </div>
     </section>
-
-    <section class="card" data-reveal>
+  </div>
+  <div class="blk" data-id="score" data-span="1" data-reveal>${grip("grip-top")}
+    <section class="card">
       <div class="card-title">Score heute
         <span style="display:flex;gap:6px;flex-wrap:nowrap">${sc.provisional ? '<span class="pill">Vorläufig</span>' : ''}<span class="pill ${sc.status}">${statusLabel(sc.status)}</span></span></div>
       <div class="big-score">
@@ -74,46 +81,48 @@ boot(async main => {
         <a class="btn secondary block" style="margin-top:16px" href="/eintrag?date=${today}">${icon('edit')} Daten ergänzen</a>`}
     </section>
   </div>
-
-  ${weightAge != null && weightAge > 7 ? `<div class="card" data-reveal style="margin-top:16px;border-left:3px solid var(--warn)">
+  ${weightAge != null && weightAge > 7 ? `  <div class="blk" data-id="warn" data-span="2" data-reveal>${grip("grip-top")}
+    <div class="card" style="border-left:3px solid var(--warn)">
     Deine letzte Gewichtsmessung ist <b>${weightAge} Tage</b> alt. Wiegen und
     <button class="btn ghost" data-sync-inline style="padding:0">Health Sync</button> starten oder
-    <a href="/gewicht" style="color:var(--accent)">manuell eintragen</a>.</div>` : ''}
-
-  <div class="section-title">Auf einen Blick</div>
-  <div class="tiles tiles-4" data-reveal>
-    <a class="tile" href="/eintrag?date=${today}">
+    <a href="/gewicht" style="color:var(--accent)">manuell eintragen</a>.</div>
+  </div>` : ''}
+  <div class="blk" data-id="glance" data-span="2" data-reveal>${grip("grip-top")}
+    <div class="section-title" style="margin-top:0">Auf einen Blick</div>
+  <div class="tiles tiles-4" data-sort="glance">
+    <a class="tile" data-id="steps" href="/eintrag?date=${today}">${grip("grip-tile")}
       <div class="tile-value"><span id="t-steps">–</span></div>
       <div class="tile-label">Schritte heute · Ziel ${fmt(goals.steps_target)}</div>
       <div class="tile-viz" id="sp-steps"></div>
     </a>
-    <a class="tile" href="/eintrag?date=${today}">
+    <a class="tile" data-id="kcal" href="/eintrag?date=${today}">${grip("grip-tile")}
       <div class="tile-value"><span id="t-kcal">–</span><span class="unit">kcal</span></div>
       <div class="tile-label">Kalorien heute · Ziel ≤ ${fmt(goals.kcal_target)}</div>
       <div class="tile-viz" id="sp-kcal"></div>
     </a>
-    <a class="tile" href="/woche">
+    <a class="tile" data-id="beer" href="/woche">${grip("grip-tile")}
       <div class="tile-value"><span id="t-beer">0</span><span class="unit">/ ${fmt(week.beerBudget)} Bier</span></div>
       <div class="tile-label">diese Woche · ${week.beerLeft >= 0 ? `${week.beerLeft} übrig` : `${-week.beerLeft} drüber`}</div>
       <div class="tile-viz" style="display:flex;align-items:flex-end"><div class="progress ${beerPct >= 100 ? 'bad' : beerPct >= 75 ? 'warn' : ''}" style="width:100%"><i data-w="${beerPct}"></i></div></div>
     </a>
-    <a class="tile" href="/woche">
+    <a class="tile" data-id="green" href="/woche">${grip("grip-tile")}
       <div class="tile-value"><span id="t-green">0</span><span class="unit">/ ${week.goalGreen} grün</span></div>
       <div class="tile-label">Wochenziel · Streak ${streak} ${streak === 1 ? 'Tag' : 'Tage'}</div>
       <div class="tile-viz"><div class="week" style="gap:4px">${week.days.map(d =>
         `<i class="st-${d.score.status}" style="height:8px;border-radius:4px;background:var(--st);opacity:${d.future ? 0.35 : 1}"></i>`).join('')}</div></div>
     </a>
   </div>
-
+  </div>
   ${health ? healthRow(health) : ''}
-
-  <div class="grid grid-2" style="margin-top:16px">
-    <section class="card" data-reveal>
+  <div class="blk" data-id="steps" data-span="1" data-reveal>${grip("grip-top")}
+    <section class="card">
       <div class="card-title">Bewegung · 14 Tage <a href="/verlauf">Verlauf</a></div>
       <div id="ch-steps"></div>
       <div class="legend"><span><i class="line" style="background:var(--blue)"></i>Schritte</span><span><i class="dash"></i>Ziel ${fmt(goals.steps_target)}</span></div>
     </section>
-    <section class="card" data-reveal>
+  </div>
+  <div class="blk" data-id="water" data-span="1" data-reveal>${grip("grip-top")}
+    <section class="card">
       <div class="card-title"><span>Wasser heute</span><b style="text-transform:none;letter-spacing:0;color:var(--ink)"><span id="t-water">0</span> / ${fmt(goals.water_target)} ml</b></div>
       <div class="progress ${waterPct >= 100 ? '' : 'warn'}" style="height:10px"><i data-w="${waterPct}" style="background:var(--blue)"></i></div>
       <p class="muted" style="margin:10px 0 14px;font-size:.85rem">${waterPct >= 100 ? 'Ziel erreicht – +1 Punkt im Score ✓' : `Noch ${fmt(Math.max(0, goals.water_target - water))} ml bis zum Ziel (+1 Punkt)`}</p>
@@ -123,12 +132,28 @@ boot(async main => {
         <button class="btn ghost" data-water="-250" aria-label="250 ml abziehen">−250</button>
       </div>
     </section>
-    <section class="card" data-reveal>
+  </div>
+  <div class="blk" data-id="beer" data-span="1" data-reveal>${grip("grip-top")}
+    <section class="card">
       <div class="card-title"><span>Noch ein Bier?</span>${icon('beer', '').replace('<svg', '<svg style="width:20px;height:20px;color:var(--accent)"')}</div>
       <p class="muted" style="margin:0 0 14px">Bevor du bestellst: Was kostet dich das nächste Bier – Wochenbudget, Score und Kalorien?</p>
       <button class="btn block" id="beer-btn">Entscheidungsrechner öffnen</button>
     </section>
+  </div>
   </div>`;
+
+  // Reihenfolge der Blöcke/Kacheln: gespeichert in app_settings, per Anfasser änderbar
+  const SORTS = [['home', '.blk', 'order_home'], ['glance', '.tile', 'order_glance'], ['health', '.tile', 'order_health']];
+  for (const [name, sel, key] of SORTS) {
+    const box = main.querySelector(`[data-sort="${name}"]`);
+    if (!box) continue;
+    applyOrder(box, sel, settings[key]);
+    makeSortable(box, {
+      itemSelector: sel,
+      onChange: order => api('/api/settings', { method: 'PUT', body: { key, value: order } })
+        .catch(ex => toast(`Reihenfolge nicht gespeichert: ${ex.message}`, 'error')),
+    });
+  }
 
   countUp(document.getElementById('hw'), cur, 1);
   countUp(document.getElementById('hp'), Math.round(progress));
@@ -214,10 +239,12 @@ function healthRow(h) {
   const cat = bp ? bpCategory(bp.systolic, bp.diastolic) : null;
   if (!rest && !night && !bp) return '';
   return `
-  <div class="section-title">Gesundheit</div>
-  <div class="tiles tiles-3" data-reveal>
-    <a class="tile" href="/gesundheit#puls"><div class="tile-value">${rest ? fmt(rest.resting, 0) : '–'}<span class="unit">bpm</span></div><div class="tile-label">Ruhepuls</div></a>
-    <a class="tile" href="/gesundheit#schlaf"><div class="tile-value">${night ? hm(night.asleepSeconds) : '–'}<span class="unit">h</span></div><div class="tile-label">Schlaf letzte Nacht</div></a>
-    <a class="tile" href="/gesundheit#bp"><div class="tile-value">${bp ? `${bp.systolic}/${bp.diastolic}` : '–'}</div><div class="tile-label">${cat ? `<span class="pill ${cat.status}" style="font-size:.7rem;padding:2px 8px">${cat.label}</span>` : 'Blutdruck'}</div></a>
+  <div class="blk" data-id="health" data-span="2" data-reveal>${grip('grip-top')}
+  <div class="section-title" style="margin-top:0">Gesundheit</div>
+  <div class="tiles tiles-3" data-sort="health">
+    <a class="tile" data-id="rest" href="/gesundheit#puls">${grip('grip-tile')}<div class="tile-value">${rest ? fmt(rest.resting, 0) : '–'}<span class="unit">bpm</span></div><div class="tile-label">Ruhepuls</div></a>
+    <a class="tile" data-id="sleep" href="/gesundheit#schlaf">${grip('grip-tile')}<div class="tile-value">${night ? hm(night.asleepSeconds) : '–'}<span class="unit">h</span></div><div class="tile-label">Schlaf letzte Nacht</div></a>
+    <a class="tile" data-id="bp" href="/gesundheit#bp">${grip('grip-tile')}<div class="tile-value">${bp ? `${bp.systolic}/${bp.diastolic}` : '–'}</div><div class="tile-label">${cat ? `<span class="pill ${cat.status}" style="font-size:.7rem;padding:2px 8px">${cat.label}</span>` : 'Blutdruck'}</div></a>
+  </div>
   </div>`;
 }

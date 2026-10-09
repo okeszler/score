@@ -94,3 +94,4 @@ CREATE TABLE IF NOT EXISTS sync_activities (
   elapsed_seconds INTEGER, active_seconds INTEGER, distance_km REAL, calories REAL, steps INTEGER, avg_hr REAL, max_hr REAL,
   UNIQUE(entry_date, start_time, activity_type)
 );
+CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
