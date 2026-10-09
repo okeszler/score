@@ -27,6 +27,8 @@ boot(async main => {
     ${isCurrent ? '<span class="icon-btn" style="visibility:hidden"></span>' : `<a class="icon-btn" href="/woche?w=${addDays(monday, 7)}" aria-label="Nächste Woche">${icon('right')}</a>`}
   </div>
 
+  <a class="btn secondary block" href="/verlauf" data-reveal style="margin-bottom:16px">${icon('chart')} 13-Wochen-Verlauf & Zusammenhänge</a>
+
   <section class="card" data-reveal>
     <div class="week">${w.days.map((d, i) => `
       <a class="wday st-${d.score.status} ${d.date === today ? 'today' : ''} ${d.future ? 'future' : ''}"

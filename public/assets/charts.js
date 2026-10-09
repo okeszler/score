@@ -85,6 +85,9 @@ export function lineChart(container, opts) {
     const ticks = niceTicks(lo, hi, 4);
     lo = ticks[0]; hi = ticks[ticks.length - 1];
     const Y = v => pad.t + (1 - (v - lo) / (hi - lo)) * ih;
+    // Nachkommastellen der Achse aus der Schrittweite (0,5 -> 1 Stelle, 0,05 -> 2)
+    const stepY = ticks.length > 1 ? ticks[1] - ticks[0] : 1;
+    const tickDec = opts.tickDecimals ?? (stepY >= 1 ? 0 : stepY >= 0.1 ? 1 : 2);
 
     container.innerHTML = '';
     container.classList.add('chart');
@@ -92,7 +95,7 @@ export function lineChart(container, opts) {
 
     for (const t of ticks) {
       el('line', { class: 'grid-line', x1: pad.l, x2: W - pad.r, y1: Y(t), y2: Y(t) }, svg);
-      if (opts.yAxis !== false) el('text', { class: 'axis-label', x: pad.l - 8, y: Y(t) + 4, 'text-anchor': 'end' }, svg).textContent = fmt(t, opts.tickDecimals ?? 0);
+      if (opts.yAxis !== false) el('text', { class: 'axis-label', x: pad.l - 8, y: Y(t) + 4, 'text-anchor': 'end' }, svg).textContent = fmt(t, tickDec);
     }
     // X-Beschriftung: max. ~5 Labels
     const nLabels = Math.min(5, Math.max(2, Math.floor(iw / 80)));

@@ -48,7 +48,7 @@ boot(async main => {
               ${sync.lastRun.errors.length ? `<div class="row" style="display:block;color:var(--bad);font-size:.82rem">${sync.lastRun.errors.map(esc).join('<br>')}</div>` : ''}` : ''}
           </div>
           <button class="btn secondary block" style="margin-top:14px" id="sync">${icon('sync')} Jetzt synchronisieren</button>
-          <p class="muted" style="font-size:.8rem;margin:10px 0 0">Automatisch jeden Tag um 23:59 Uhr. Liest „Schritte …“, „Gewicht …“ und „Ernährung … Health Connect.csv“ aus den Google-Drive-Ordnern, die mit dem Service Account geteilt sind.</p>`
+          <p class="muted" style="font-size:.8rem;margin:10px 0 0">Automatisch jeden Tag um 23:59 Uhr. Liest Schritte, Gewicht, Ernährung, Puls, Schlaf, Blutdruck und Aktivitäten („Health Sync …“-Ordner) aus den Google-Drive-Ordnern, die mit dem Service Account geteilt sind.</p>`
         : '<p class="muted">Nicht eingerichtet: Secret <code>GOOGLE_SERVICE_ACCOUNT_JSON</code> fehlt im Pages-Projekt.</p>'}
       </section>
 
@@ -62,6 +62,12 @@ boot(async main => {
         ${bioOk ? (deviceHasPasskey() && keys.credentials.length ? '<p class="muted" style="font-size:.82rem;margin:10px 0 0">Auf diesem Gerät eingerichtet. Beim Öffnen der Login-Seite wird der Fingerabdruck direkt abgefragt.</p>'
           : `<button class="btn secondary block" id="bio-add" style="margin-top:12px">Auf diesem Gerät einrichten</button>`)
           : '<p class="muted" style="font-size:.82rem;margin:10px 0 0">Dieser Browser bzw. dieses Gerät unterstützt keine Fingerabdruck-Anmeldung.</p>'}
+      </section>
+
+      <section class="card" data-reveal>
+        <div class="card-title">Daten exportieren (CSV, Excel)</div>
+        <div class="btn-row">${[['tage', 'Tage'], ['koerper', 'Körper'], ['blutdruck', 'Blutdruck'], ['blutwerte', 'Blutwerte']]
+          .map(([k, l]) => `<a class="btn secondary" style="flex:1" href="/api/export?type=${k}">${icon('download')} ${l}</a>`).join('')}</div>
       </section>
 
       <section class="card" data-reveal>

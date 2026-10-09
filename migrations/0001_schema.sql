@@ -72,3 +72,25 @@ CREATE TABLE IF NOT EXISTS sync_nutrition_daily (
   src_time TEXT NOT NULL,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+-- Gesundheit (aus dem Health Tracker übernommen)
+ALTER TABLE weight ADD COLUMN muscle_kg REAL;      -- wird zur Laufzeit idempotent ergänzt
+ALTER TABLE weight ADD COLUMN body_water_kg REAL;
+CREATE TABLE IF NOT EXISTS blood_pressure (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, entry_date TEXT NOT NULL, reading_time TEXT NOT NULL DEFAULT '',
+  systolic INTEGER NOT NULL, diastolic INTEGER NOT NULL, pulse INTEGER, note TEXT, source TEXT NOT NULL DEFAULT 'manuell',
+  UNIQUE(entry_date, reading_time, systolic, diastolic)
+);
+CREATE TABLE IF NOT EXISTS lab_results (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, entry_date TEXT NOT NULL, test_name TEXT NOT NULL, value REAL NOT NULL,
+  unit TEXT, note TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS sync_pulse_hourly (
+  entry_date TEXT NOT NULL, hour INTEGER NOT NULL, n INTEGER NOT NULL, avg_bpm REAL NOT NULL,
+  min_bpm INTEGER NOT NULL, max_bpm INTEGER NOT NULL, PRIMARY KEY (entry_date, hour)
+) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS sync_sleep_segments (start_ts TEXT PRIMARY KEY, seconds INTEGER NOT NULL, stage TEXT) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS sync_activities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, entry_date TEXT NOT NULL, start_time TEXT, activity_type TEXT, source_app TEXT,
+  elapsed_seconds INTEGER, active_seconds INTEGER, distance_km REAL, calories REAL, steps INTEGER, avg_hr REAL, max_hr REAL,
+  UNIQUE(entry_date, start_time, activity_type)
+);

@@ -18,6 +18,11 @@ const P = {
   right: '<path d="m9 18 6-6-6-6"/>',
   beer: '<path d="M6 8h10v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M16 11h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2"/><path d="M6 8a3 3 0 0 1 3-4 3 3 0 0 1 5 0 2.5 2.5 0 0 1 2 4"/>',
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/>',
+  heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/><path d="M3.5 12h4l2-3 3 6 2-3h6"/>',
+  moonSleep: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  drop: '<path d="M12 2.7s-6 6.4-6 11a6 6 0 0 0 12 0c0-4.6-6-11-6-11z"/>',
+  flask: '<path d="M9 3h6M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7 15h10"/>',
+  download: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
   flex: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/>',
 };
 export const icon = (name, cls = '') =>
@@ -27,9 +32,11 @@ const PAGES = [
   { id: 'heute', href: '/', label: 'Heute', icon: 'home' },
   { id: 'woche', href: '/woche', label: 'Woche', icon: 'week' },
   { id: 'eintrag', href: '/eintrag', label: 'Eintragen', icon: 'plus', cls: 'nav-add' },
-  { id: 'gewicht', href: '/gewicht', label: 'Gewicht', icon: 'scale' },
-  { id: 'verlauf', href: '/verlauf', label: 'Verlauf', icon: 'chart' },
+  { id: 'gewicht', href: '/gewicht', label: 'Körper', icon: 'scale' },
+  { id: 'gesundheit', href: '/gesundheit', label: 'Gesundheit', icon: 'heart' },
 ];
+// nur in der Desktop-Seitenleiste (mobil über die Wochenseite erreichbar)
+const EXTRA_PAGES = [{ id: 'verlauf', href: '/verlauf', label: 'Verlauf', icon: 'chart' }];
 
 // ---------- Theme ----------
 export function currentTheme() {
@@ -50,6 +57,7 @@ export function shell({ page, title, subtitle = '' }) {
   nav.innerHTML = `
     <div class="nav-brand"><span class="logo">${icon('flex')}</span><div><b>SCORE</b><i>Weg zu 85 kg</i></div></div>
     ${PAGES.map(p => `<a href="${p.href}" class="${p.cls || ''}" ${p.id === page ? 'aria-current="page"' : ''}>${icon(p.icon)}<span>${p.label}</span></a>`).join('')}
+    ${EXTRA_PAGES.map(p => `<a href="${p.href}" class="nav-extra" ${p.id === page ? 'aria-current="page"' : ''}>${icon(p.icon)}<span>${p.label}</span></a>`).join('')}
     <div class="spacer nav-extra" style="padding:0"></div>
     <a href="/einstellungen" class="nav-extra" ${page === 'einstellungen' ? 'aria-current="page"' : ''}>${icon('settings')}<span>Einstellungen</span></a>`;
   document.body.prepend(nav);
