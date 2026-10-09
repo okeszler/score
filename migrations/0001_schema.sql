@@ -62,3 +62,10 @@ CREATE TABLE IF NOT EXISTS webauthn_credentials (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   last_used TEXT
 );
+CREATE TABLE IF NOT EXISTS sync_nutrition_daily (
+  entry_date TEXT PRIMARY KEY,
+  kcal INTEGER,
+  protein_g INTEGER,
+  src_time TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

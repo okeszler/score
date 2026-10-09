@@ -10,6 +10,7 @@ const FIELDS = [
   ['body_fat_pct', 'Ziel Körperfett', '%', 0.1],
   ['weekly_beer_budget', 'Bier-Budget pro Woche', 'Bier', 1],
   ['kcal_target', 'Kalorienziel pro Tag (max.)', 'kcal', 50],
+  ['water_target', 'Wasserziel pro Tag (min.)', 'ml', 250],
   ['protein_target', 'Proteinziel pro Tag (min.)', 'g', 5],
   ['steps_target', 'Schrittziel pro Tag', 'Schritte', 500],
   ['green_days_per_week', 'Grüne Tage pro Woche', 'Tage', 1],
@@ -47,7 +48,7 @@ boot(async main => {
               ${sync.lastRun.errors.length ? `<div class="row" style="display:block;color:var(--bad);font-size:.82rem">${sync.lastRun.errors.map(esc).join('<br>')}</div>` : ''}` : ''}
           </div>
           <button class="btn secondary block" style="margin-top:14px" id="sync">${icon('sync')} Jetzt synchronisieren</button>
-          <p class="muted" style="font-size:.8rem;margin:10px 0 0">Automatisch jeden Tag um 23:59 Uhr. Liest „Schritte …“ und „Gewicht … Health Connect.csv“ aus den Google-Drive-Ordnern, die mit dem Service Account geteilt sind.</p>`
+          <p class="muted" style="font-size:.8rem;margin:10px 0 0">Automatisch jeden Tag um 23:59 Uhr. Liest „Schritte …“, „Gewicht …“ und „Ernährung … Health Connect.csv“ aus den Google-Drive-Ordnern, die mit dem Service Account geteilt sind.</p>`
         : '<p class="muted">Nicht eingerichtet: Secret <code>GOOGLE_SERVICE_ACCOUNT_JSON</code> fehlt im Pages-Projekt.</p>'}
       </section>
 
@@ -77,11 +78,11 @@ boot(async main => {
     <div class="card-title">So wird der Score berechnet (0–10)</div>
     <div class="rows">
       <div class="row"><span><b>Bewegung</b> (max. 4)</span><b>Schritte ≥ 100 % Ziel: 3 · ≥ 75 %: 2 · ≥ 50 %: 1 · + Training: 1</b></div>
-      <div class="row"><span><b>Ernährung</b> (max. 3)</span><b>getrackt: 1 · kcal ≤ Ziel: 1 · Protein ≥ Ziel: 1</b></div>
+      <div class="row"><span><b>Ernährung</b> (max. 3)</span><b>kcal ≤ Ziel: 1 · Protein ≥ Ziel: 1 · Wasser ≥ Ziel: 1</b></div>
       <div class="row"><span><b>Alkohol</b> (max. 3)</span><b>0 Bier: 3 · 1: 2 · 2: 1 · ab 3: 0 · Wochenbudget überschritten: 0</b></div>
       <div class="row"><span><b>Ampel</b></span><b><span class="pill green">ab 7</span> <span class="pill orange">ab 4</span> <span class="pill red">darunter</span></b></div>
     </div>
-    <p class="muted" style="font-size:.82rem;margin:12px 0 0">Schritte: manueller Wert hat Vorrang, sonst Health Sync, sonst Walk-km × 1.300.
+    <p class="muted" style="font-size:.82rem;margin:12px 0 0">Schritte: manueller Wert hat Vorrang, sonst Health Sync, sonst Walk-km × 1.300. kcal und Protein: manueller Wert hat Vorrang, sonst MyFitnessPal (über Health Connect).
       Tage ohne Eintrag zählen als „kein Eintrag“ (grau), nicht als rot. Risikotag = mehr als ${RISK_DAY_G} g Alkohol (≈ ${fmt(RISK_DAY_G / BEER.alcoholG, 1)} Bier).</p>
   </section>`;
 

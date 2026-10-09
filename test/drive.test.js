@@ -32,3 +32,12 @@ test('Formatfehler sind als FormatError erkennbar', async () => {
   const { FormatError } = await import('../lib/drive.js');
   assert.throws(() => parseWeightCsv('a,b\n1,2'), FormatError);
 });
+
+test('Ernährungs-CSV (MyFitnessPal über Health Sync): Tagessummen', async () => {
+  const { parseNutritionCsv } = await import('../lib/drive.js');
+  const csv = 'Datum,Zeit,Mahlzeit,Name,Beschreibung,kcal,Kohlenhydrate (Gramm),Cholesterin (mg),Fett (Gramm),Ballaststoffe (Gramm),Zucker (Gramm),Protein (g),Vitamin A (mcg)\n'
+    + '2026.10.08 10:00:00,10:00:00,1,null,null,510.7,31.42,0.0,3.26,0.0,28.36,84.88,0.0\n'
+    + '2026.10.08 13:00:00,13:00:00,2,null,null,700.2,50,0,20,0,5,40.3,0\n'
+    + '2026.10.09 08:00:00,08:00:00,1,null,null,300,10,0,5,0,2,20,0\n';
+  assert.deepEqual(parseNutritionCsv(csv), { '2026-10-08': { kcal: 1211, protein: 125 }, '2026-10-09': { kcal: 300, protein: 20 } });
+});
