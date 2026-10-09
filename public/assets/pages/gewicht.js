@@ -12,6 +12,21 @@ boot(async main => {
   const { today, goals, weights, lastWeight, firstWeight, lastFat } = ctx;
   const ws = weights.filter(w => w.weight_kg != null);
   const fats = weights.filter(w => w.body_fat_pct != null);
+  const waters = weights.filter(w => w.body_water_kg != null);
+  const muscles = weights.filter(w => w.muscle_kg != null);
+  const lastOf = (arr, k) => [...arr].reverse().find(w => w[k] != null) || null;
+  const firstOf = (arr, k) => arr.find(w => w[k] != null) || null;
+  const lw = lastWeight, lf = lastFat, lwat = lastOf(waters, 'body_water_kg'), lmus = lastOf(muscles, 'muscle_kg');
+  const lbmr = lastOf(weights, 'bmr_kcal');
+  // Fett- und fettfreie Masse aus Gewicht × Körperfett derselben Messung
+  const fatMass = w => (w?.weight_kg != null && w?.body_fat_pct != null ? (w.weight_kg * w.body_fat_pct) / 100 : null);
+  const both = weights.filter(w => w.weight_kg != null && w.body_fat_pct != null);
+  const lb = both[both.length - 1] || null, fb = both[0] || null;
+  const delta = (now, then, d = 1, unit = '', upIsGood = false) => {
+    if (now == null || then == null || now === then) return '';
+    const x = now - then;
+    return `<small class="${(x > 0) === upIsGood ? 'good' : 'bad'}" style="display:block;font-size:.75rem">${x > 0 ? '+' : ''}${fmt(x, d)}${unit} seit Start</small>`;
+  };
   const start = goals.start_weight_kg ?? firstWeight?.weight_kg ?? null;
   const min = ws.length ? Math.min(...ws.map(w => w.weight_kg)) : null;
   const trend = weightTrend(weights, goals.weight_kg, today);
@@ -63,16 +78,34 @@ boot(async main => {
     </section>
   </div>
 
+  <section class="card" data-reveal style="margin-top:16px">
+    <div class="card-title">Körperzusammensetzung <span class="muted" style="text-transform:none;letter-spacing:0">Samsung Health</span></div>
+    <div class="comp">
+      <div><b>${lf ? fmt(lf.body_fat_pct, 1) : '–'}<small> %</small></b><span>Körperfett</span>${delta(lf?.body_fat_pct, firstOf(fats, 'body_fat_pct')?.body_fat_pct, 1, ' %')}</div>
+      <div><b>${lb ? fmt(fatMass(lb), 1) : '–'}<small> kg</small></b><span>Fettmasse</span>${delta(fatMass(lb), fatMass(fb), 1, ' kg')}</div>
+      <div><b>${lb ? fmt(lb.weight_kg - fatMass(lb), 1) : '–'}<small> kg</small></b><span>Fettfreie Masse</span></div>
+      <div><b>${lmus ? fmt(lmus.muscle_kg, 1) : '–'}<small> kg</small></b><span>Muskelmasse${lmus ? '' : ' (nicht geliefert)'}</span>${delta(lmus?.muscle_kg, firstOf(muscles, 'muscle_kg')?.muscle_kg, 1, ' kg', true)}</div>
+      <div><b>${lwat ? fmt(lwat.body_water_kg, 1) : '–'}<small> kg</small></b><span>Körperwasser${lwat?.weight_kg ? ` · ${fmt((lwat.body_water_kg / lwat.weight_kg) * 100, 0)} %` : ''}</span></div>
+      <div><b>${lbmr ? fmt(lbmr.bmr_kcal) : '–'}<small> kcal</small></b><span>Grundumsatz</span></div>
+    </div>
+    ${lbmr ? `<p class="muted" style="font-size:.8rem;margin:12px 0 0">Grundumsatz ${fmt(lbmr.bmr_kcal)} kcal + Alltag/Bewegung ≈ ${fmt(Math.round(lbmr.bmr_kcal * 1.35 / 50) * 50)} kcal Tagesbedarf. Dein Kalorienziel von ${fmt(goals.kcal_target)} kcal entspricht damit ca. ${fmt(Math.max(0, Math.round(lbmr.bmr_kcal * 1.35 - goals.kcal_target)))} kcal Defizit pro Tag.</p>` : ''}
+  </section>
+
   <div class="grid grid-2" style="margin-top:16px">
     <section class="card" data-reveal>
       <div class="card-title">Körperfett</div>
       <div id="ch-f"></div>
     </section>
     <section class="card" data-reveal>
-      <div class="card-title">Messungen</div>
-      <div class="list" id="list"></div>
+      <div class="card-title">${muscles.length ? 'Muskelmasse & Körperwasser' : 'Körperwasser'}</div>
+      <div id="ch-m"></div>
     </section>
-  </div>`;
+  </div>
+
+  <section class="card" data-reveal style="margin-top:16px">
+    <div class="card-title">Messungen</div>
+    <div class="list" id="list"></div>
+  </section>`;
 
   countUp(document.getElementById('w'), lastWeight?.weight_kg ?? null, 1);
 
@@ -88,6 +121,13 @@ boot(async main => {
     series: [{ name: 'Körperfett', color: 'var(--blue)', points: inRange(fats).map(w => ({ x: w.entry_date, y: w.body_fat_pct })), area: true, dots: true }],
     goal: { y: goals.body_fat_pct, label: `Ziel ${fmt(goals.body_fat_pct)} %` }, height: 190, unit: '%', label: 'Körperfettverlauf',
   });
+  lineChart(document.getElementById('ch-m'), {
+    series: [
+      { name: 'Körperwasser', color: 'var(--blue)', points: inRange(waters).map(w => ({ x: w.entry_date, y: w.body_water_kg })), area: !muscles.length, dots: true },
+      ...(muscles.length ? [{ name: 'Muskelmasse', color: 'var(--good)', points: inRange(muscles).map(w => ({ x: w.entry_date, y: w.muscle_kg })), dots: true }] : []),
+    ],
+    height: 190, unit: 'kg', label: 'Körperwasser und Muskelmasse', empty: 'Noch keine Werte – kommen mit der nächsten Messung auf der Waage',
+  });
 
   main.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => {
     range = Number(b.dataset.range);
@@ -99,7 +139,7 @@ boot(async main => {
   const rows = [...weights].reverse().slice(0, 15);
   list.innerHTML = rows.length ? rows.map(w => `
     <div class="list-item">
-      <div class="meta"><b>${w.weight_kg != null ? `${fmt(w.weight_kg, 1)} kg` : '–'}${w.body_fat_pct != null ? ` · ${fmt(w.body_fat_pct, 1)} %` : ''}</b>
+      <div class="meta"><b>${w.weight_kg != null ? `${fmt(w.weight_kg, 1)} kg` : '–'}${w.body_fat_pct != null ? ` · ${fmt(w.body_fat_pct, 1)} %` : ''}${w.body_water_kg != null ? ` · 💧 ${fmt(w.body_water_kg, 1)} kg` : ''}${w.muscle_kg != null ? ` · 💪 ${fmt(w.muscle_kg, 1)} kg` : ''}</b>
         <span>${fmtDate(w.entry_date, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })} · ${w.source === 'sync' ? 'Health Sync' : 'manuell'}</span></div>
       <div class="actions"><button class="del" data-del="${w.entry_date}" aria-label="Löschen">${icon('trash')}</button></div>
     </div>`).join('') : '<div class="empty-state">Noch keine Messungen.</div>';

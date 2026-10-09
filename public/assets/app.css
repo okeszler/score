@@ -483,3 +483,12 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .keypad .key-ok[disabled] { opacity: 0.6; }
 #bio { margin-top: 4px; }
 #bio svg { width: 22px; height: 22px; }
+
+/* Körperzusammensetzung */
+.comp { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 12px; }
+@media (min-width: 640px) { .comp { grid-template-columns: repeat(3, 1fr); } }
+.comp b { display: block; font-size: 1.5rem; font-weight: 300; }
+.comp b small { font-size: .8rem; color: var(--muted); }
+.comp span { font-size: .78rem; color: var(--muted); }
+.comp small.good { color: var(--good); }
+.comp small.bad { color: var(--bad); }

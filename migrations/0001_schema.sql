@@ -34,6 +34,9 @@ CREATE TABLE IF NOT EXISTS sync_weight_readings (
   reading_time TEXT NOT NULL,
   weight_kg REAL NOT NULL,
   body_fat_pct REAL,
+  muscle_kg REAL,
+  body_water_kg REAL,
+  bmr_kcal REAL,
   UNIQUE(entry_date, reading_time, weight_kg)
 );
 CREATE INDEX IF NOT EXISTS idx_sync_weight_readings_date ON sync_weight_readings(entry_date);
