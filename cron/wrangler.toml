@@ -3,9 +3,10 @@ main = "worker.js"
 compatibility_date = "2024-09-01"
 workers_dev = false
 
-# Täglich 23:59 Europe/Berlin (Sommerzeit = 21:59 UTC, Winterzeit = 22:59 UTC)
+# Alle 30 Minuten (:29 und :59); nachts filtert der Worker (vor 06:29 Berliner Zeit kein Lauf).
+# Ein einziger Cron-Ausdruck = ein Trigger (Free-Plan: max. 5 pro Konto).
 [triggers]
-crons = ["59 21-22 * * *"]
+crons = ["29,59 * * * *"]
 
 [[d1_databases]]
 binding = "DB"

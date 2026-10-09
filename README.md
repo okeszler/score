@@ -17,6 +17,12 @@ Wochenziel, Gewichtstrend und Health-Connect-Sync aus Google Drive.
 | `/verlauf` | 13-Wochen-Kalender, Ø Wochenscore, Ø Wochengewicht, Zusammenhänge (Tag nach Bier) |
 | `/einstellungen` | Ziele, Health Sync, Theme, Abmelden, Score-Erklärung |
 
+## Vorläufiger Score
+
+Tage mit importierten Daten (Schritte, MyFitnessPal) bekommen automatisch einen **vorläufigen** Score
+(Annahme: 0 Bier, kein Training). Auf der Startseite: „+ Daten ergänzen“ oder „Passt so ✓“ (bestätigt den Tag).
+Vorläufige Tage sind in Woche/Verlauf gestrichelt markiert und zählen nicht als „alkoholfrei“.
+
 ## Score (0–10)
 
 - **Bewegung (max. 4):** Schritte ≥ 100 % Ziel = 3, ≥ 75 % = 2, ≥ 50 % = 1; Training +1
@@ -87,9 +93,9 @@ Manuell eingetragene Werte haben Vorrang. Wasser wird nicht exportiert und wird 
 
 ## Automatischer Sync (Cron)
 
-Der Worker `olivers-score-cron` (`cron/`) ruft täglich um **23:59 Uhr Berliner Zeit** `POST /api/sync` auf.
-Cloudflare-Crons laufen in UTC, daher feuert der Trigger `59 21-22 * * *` (ein Trigger, Free-Plan-Limit: 5 pro Account)
-und der Worker führt nur den Lauf aus, der in Berlin 23 Uhr ist (Sommer/Winterzeit).
+Der Worker `olivers-score-cron` (`cron/`) ruft **alle 30 Minuten von 06:29 bis 23:59 Uhr (Berlin)** `POST /api/sync` auf.
+Trigger `29,59 * * * *` (ein einziger Trigger, Free-Plan-Limit: 5 pro Account); die Nachtpause und Sommer-/Winterzeit
+prüft der Worker selbst. Aufwand: ca. 36 Läufe/Tag, ~1–2 Tsd. D1-Schreibvorgänge (Limit 100 Tsd./Tag für das Konto).
 Authentifizierung über das Secret `CRON_SECRET` (identisch im Pages-Projekt und im Worker), nur für `/api/sync`.
 
 ```bash

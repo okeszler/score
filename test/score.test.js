@@ -96,3 +96,20 @@ test('Bier-Entscheidung', () => {
   const r2 = beerDecision({ ...days, '2026-10-07': day('2026-10-07', { beer_count: 1 }) }, goals, '2026-10-07');
   assert.equal(r2.verdict, 'no');
 });
+
+test('Vorläufige Tage aus importierten Daten: 0 Bier angenommen, zählen nicht als alkoholfrei', async () => {
+  const { withProvisionalDays, isConfirmed, hasEntry } = await import('../public/assets/score.js');
+  const confirmed = { '2026-10-05': day('2026-10-05', { beer_count: 2, steps: 9000 }) };
+  const all = withProvisionalDays(confirmed, { '2026-10-06': 12000, '2026-10-20': 5000 }, { '2026-10-06': { kcal: 1800, protein: 150 } }, '2026-10-07');
+  assert.ok(all['2026-10-06'].provisional);
+  assert.ok(all['2026-10-07'].provisional, 'heute bekommt immer einen Tag');
+  assert.equal(all['2026-10-20'], undefined, 'keine Tage in der Zukunft');
+  assert.ok(hasEntry(all['2026-10-06']) && !isConfirmed(all['2026-10-06']));
+  assert.ok(isConfirmed(all['2026-10-05']));
+  const scores = scoreAll(all, goals);
+  assert.equal(scores['2026-10-06'].total, 3 + 2 + 3); // Schritte 3, kcal+Protein 2, Alkohol 3 (angenommen)
+  assert.equal(scores['2026-10-06'].provisional, true);
+  const w = weekSummary(all, scores, goals, '2026-10-05', '2026-10-07');
+  assert.equal(w.provisional, 2);
+  assert.equal(w.alcoholFree, 0);
+});

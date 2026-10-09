@@ -509,3 +509,8 @@ details > summary::-webkit-details-marker { display: none; }
 .lab-cell span { font-size: .78rem; color: var(--muted); }
 .lab-cell b { font-weight: 500; }
 .list.wrap .meta span { white-space: normal; }
+/* Vorläufige Tage (aus importierten Daten, Bier unbestätigt) */
+.heat-cell.prov { opacity: .45; outline: 1.5px dashed var(--ink-2); outline-offset: -1.5px; animation-name: pop-prov; }
+@keyframes pop-prov { from { opacity: 0; transform: scale(.6); } to { opacity: .45; transform: none; } }
+.wday.prov { border: 1px dashed var(--muted); }
+.wday.prov b::after { content: '*'; color: var(--muted); font-size: .8em; }

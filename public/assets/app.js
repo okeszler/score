@@ -1,5 +1,5 @@
 // Gemeinsame Client-Logik: Navigation, API, Formatierung, Animationen, Daten-Kontext.
-import { addDays, isoDate, mergeGoals, scoreAll, STATUS } from './score.js';
+import { addDays, isoDate, mergeGoals, scoreAll, STATUS, withProvisionalDays } from './score.js';
 
 // ---------- Icons (Lucide-Stil, inline) ----------
 const P = {
@@ -103,8 +103,9 @@ export async function loadContext(daysBack = 120) {
   const from = addDays(t, -(daysBack + 7));
   const data = await api(`/api/data?from=${from}`);
   const goals = mergeGoals(data.goals);
-  const daysByDate = {};
+  let daysByDate = {};
   for (const d of data.days) daysByDate[d.entry_date] = d;
+  daysByDate = withProvisionalDays(daysByDate, data.synced, data.food || {}, t);
   const scores = scoreAll(daysByDate, goals);
   const weights = data.weights;
   const lastWeight = [...weights].reverse().find(w => w.weight_kg != null) || null;

@@ -54,19 +54,24 @@ boot(async main => {
     </section>
 
     <section class="card" data-reveal>
-      <div class="card-title">Score heute ${sc && sc.status !== 'none' ? `<span class="pill ${sc.status}">${statusLabel(sc.status)}</span>` : ''}</div>
-      ${hasEntry(day) ? `
-        <div class="big-score">
-          ${ring(sc.total, sc.status)}
-          <div class="parts">
-            ${part('Bewegung', sc.parts.bewegung, 4)}
-            ${part('Ernährung', sc.parts.ernaehrung, 3)}
-            ${part('Alkohol', sc.parts.alkohol, 3)}
-          </div>
+      <div class="card-title">Score heute
+        <span style="display:flex;gap:6px;flex-wrap:nowrap">${sc.provisional ? '<span class="pill">Vorläufig</span>' : ''}<span class="pill ${sc.status}">${statusLabel(sc.status)}</span></span></div>
+      <div class="big-score">
+        ${ring(sc.total, sc.status)}
+        <div class="parts">
+          ${part('Bewegung', sc.parts.bewegung, 4)}
+          ${part('Ernährung', sc.parts.ernaehrung, 3)}
+          ${part('Alkohol', sc.parts.alkohol, 3)}
         </div>
-        <a class="btn secondary block" style="margin-top:16px" href="/eintrag?date=${today}">${icon('edit')} Eintrag bearbeiten</a>` : `
-        <div class="empty-state">Für heute gibt es noch keinen Eintrag.<br>
-          <a class="btn" href="/eintrag?date=${today}">${icon('plus')} Jetzt eintragen</a></div>`}
+      </div>
+      ${sc.provisional ? `
+        <p class="muted" style="font-size:.85rem;margin:14px 0 0">Aus importierten Daten berechnet${stepsToday != null ? ` (${fmt(stepsToday)} Schritte${kcalToday != null ? `, ${fmt(kcalToday)} kcal` : ''})` : ''}.
+          Annahme: <b>0 Bier, kein Training</b> – bitte bestätigen.</p>
+        <div class="btn-row" style="margin-top:12px">
+          <a class="btn" style="flex:2" href="/eintrag?date=${today}">${icon('plus')} Daten ergänzen</a>
+          <button class="btn secondary" style="flex:1" id="confirm-day" title="Kein Bier, kein Training – Tag so bestätigen">Passt so ✓</button>
+        </div>` : `
+        <a class="btn secondary block" style="margin-top:16px" href="/eintrag?date=${today}">${icon('edit')} Daten ergänzen</a>`}
     </section>
   </div>
 
@@ -145,6 +150,15 @@ boot(async main => {
 
   main.querySelector('[data-sync-inline]')?.addEventListener('click', () => document.querySelector('[data-sync]').click());
   document.getElementById('beer-btn').addEventListener('click', () => openBeer(ctx));
+  document.getElementById('confirm-day')?.addEventListener('click', async e => {
+    e.target.disabled = true;
+    try {
+      // legt den Tageseintrag mit 0 Bier an -> Score ist bestätigt
+      await api(`/api/days/${today}`, { method: 'PATCH', body: { beer_delta: 0 } });
+      toast('Tag bestätigt', 'success');
+      document.dispatchEvent(new CustomEvent('datachange'));
+    } catch (ex) { toast(ex.message, 'error'); e.target.disabled = false; }
+  });
   countUp(document.getElementById('t-water'), water, 0, 600);
   main.querySelectorAll('[data-water]').forEach(b => b.addEventListener('click', async () => {
     main.querySelectorAll('[data-water]').forEach(x => (x.disabled = true));

@@ -48,7 +48,7 @@ boot(async main => {
               ${sync.lastRun.errors.length ? `<div class="row" style="display:block;color:var(--bad);font-size:.82rem">${sync.lastRun.errors.map(esc).join('<br>')}</div>` : ''}` : ''}
           </div>
           <button class="btn secondary block" style="margin-top:14px" id="sync">${icon('sync')} Jetzt synchronisieren</button>
-          <p class="muted" style="font-size:.8rem;margin:10px 0 0">Automatisch jeden Tag um 23:59 Uhr. Liest Schritte, Gewicht, Ernährung, Puls, Schlaf, Blutdruck und Aktivitäten („Health Sync …“-Ordner) aus den Google-Drive-Ordnern, die mit dem Service Account geteilt sind.</p>`
+          <p class="muted" style="font-size:.8rem;margin:10px 0 0">Automatisch alle 30 Minuten (06:29–23:59 Uhr). Liest Schritte, Gewicht, Ernährung, Puls, Schlaf, Blutdruck und Aktivitäten („Health Sync …“-Ordner) aus den Google-Drive-Ordnern, die mit dem Service Account geteilt sind.</p>`
         : '<p class="muted">Nicht eingerichtet: Secret <code>GOOGLE_SERVICE_ACCOUNT_JSON</code> fehlt im Pages-Projekt.</p>'}
       </section>
 
