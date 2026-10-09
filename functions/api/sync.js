@@ -1,4 +1,4 @@
-import { downloadFile, FormatError, getAccessToken, listHealthFiles, parseStepsCsv, parseWeightCsv, rangeFromName } from '../../lib/drive.js';
+import { downloadFile, FormatError, getAccessToken, listHealthFiles, parseNutritionCsv, parseStepsCsv, parseWeightCsv, rangeFromName } from '../../lib/drive.js';
 import { json, handler, HttpError } from '../../lib/http.js';
 
 const MAX_DOWNLOADS = 4; // pro Aufruf – große 30-Tage-Exporte kosten CPU-Zeit
@@ -46,12 +46,15 @@ async function runSync(env) {
   const token = await getAccessToken(env.GOOGLE_SERVICE_ACCOUNT_JSON);
   const files = await listHealthFiles(token);
 
-  const { results: known } = await env.DB.prepare('SELECT drive_file_id, category FROM sync_files').all();
-  const done = new Map(known.map(k => [k.drive_file_id, k.category]));
+  const { results: known } = await env.DB.prepare('SELECT drive_file_id, category, modified_time FROM sync_files').all();
+  const done = new Map(known.map(k => [k.drive_file_id, k]));
   const pending = files.filter(f => {
-    const cat = done.get(f.id);
-    if (!cat) return true;
-    return f.category === 'gewicht' && cat !== WEIGHT_CAT;
+    const k = done.get(f.id);
+    if (!k) return true;
+    if (k.category === 'fehler') return false;
+    // Datei wurde seit dem Import überschrieben (Tagesdatei wird laufend aktualisiert)
+    if (k.modified_time && f.modifiedTime > k.modified_time) return true;
+    return f.category === 'gewicht' && k.category !== WEIGHT_CAT;
   });
 
   // Neueste zuerst. Ein Schritte-Export, dessen Zeitraum vollständig in einem neueren,
@@ -62,7 +65,8 @@ async function runSync(env) {
   let downloads = 0;
 
   const markDone = (f, cat) => env.DB.prepare(`INSERT INTO sync_files (category, drive_file_id, file_name, modified_time)
-    VALUES (?,?,?,?) ON CONFLICT(drive_file_id) DO UPDATE SET category = excluded.category, imported_at = datetime('now')`)
+    VALUES (?,?,?,?) ON CONFLICT(drive_file_id) DO UPDATE SET category = excluded.category,
+      modified_time = excluded.modified_time, imported_at = datetime('now')`)
     .bind(cat, f.id, f.name, f.modifiedTime);
 
   for (const f of pending) {
@@ -87,6 +91,17 @@ async function runSync(env) {
         report.stepsDays += stmts.length;
         if (range) covered.push(range);
         stmts.push(markDone(f, 'schritte'));
+      } else if (f.category === 'ernaehrung') {
+        const days = parseNutritionCsv(text);
+        for (const [date, n] of Object.entries(days)) {
+          // Neuester Export gewinnt (Mahlzeiten können in MyFitnessPal auch gelöscht werden)
+          stmts.push(env.DB.prepare(`INSERT INTO sync_nutrition_daily (entry_date, kcal, protein_g, src_time) VALUES (?,?,?,?)
+            ON CONFLICT(entry_date) DO UPDATE SET kcal = excluded.kcal, protein_g = excluded.protein_g,
+              src_time = excluded.src_time, updated_at = datetime('now')
+            WHERE excluded.src_time >= sync_nutrition_daily.src_time`).bind(date, n.kcal, n.protein, f.modifiedTime));
+        }
+        report.nutritionDays = (report.nutritionDays || 0) + Object.keys(days).length;
+        stmts.push(markDone(f, 'ernaehrung'));
       } else {
         const rows = parseWeightCsv(text);
         for (const r of rows) {

@@ -1,4 +1,4 @@
-import { addDays, beerDecision, daysBetween, effectiveSteps, hasEntry, weekStart, weekSummary, weightTrend, activeStreak, BEER } from '../score.js';
+import { addDays, beerDecision, daysBetween, effectiveKcal, effectiveSteps, hasEntry, weekStart, weekSummary, weightTrend, activeStreak, BEER } from '../score.js';
 import { animateIn, api, boot, countUp, esc, fmt, fmtDate, fmtLong, icon, loadContext, modal, ring, shell, statusLabel, toast } from '../app.js';
 import { lineChart, sparkline } from '../charts.js';
 
@@ -24,7 +24,11 @@ boot(async main => {
   const stepsToday = day ? effectiveSteps(day) : synced[today] ?? null;
   const last14 = Array.from({ length: 14 }, (_, i) => addDays(today, i - 13));
   const stepsSeries = last14.map(d => ({ x: d, y: daysByDate[d] ? effectiveSteps(daysByDate[d]) : synced[d] ?? null }));
-  const kcalSeries = last14.map(d => daysByDate[d]?.calories_kcal ?? null);
+  const kcalOf = d => (daysByDate[d] ? effectiveKcal(daysByDate[d]) : ctx.food[d]?.kcal ?? null);
+  const kcalSeries = last14.map(kcalOf);
+  const kcalToday = kcalOf(today);
+  const water = day?.water_ml ?? 0;
+  const waterPct = Math.min(100, (water / goals.water_target) * 100);
 
   const beerPct = Math.min(100, (week.beers / Math.max(1, week.beerBudget)) * 100);
   const streak = activeStreak(scores, today);
@@ -102,6 +106,16 @@ boot(async main => {
       <div class="legend"><span><i class="line" style="background:var(--blue)"></i>Schritte</span><span><i class="dash"></i>Ziel ${fmt(goals.steps_target)}</span></div>
     </section>
     <section class="card" data-reveal>
+      <div class="card-title"><span>Wasser heute</span><b style="text-transform:none;letter-spacing:0;color:var(--ink)"><span id="t-water">0</span> / ${fmt(goals.water_target)} ml</b></div>
+      <div class="progress ${waterPct >= 100 ? '' : 'warn'}" style="height:10px"><i data-w="${waterPct}" style="background:var(--blue)"></i></div>
+      <p class="muted" style="margin:10px 0 14px;font-size:.85rem">${waterPct >= 100 ? 'Ziel erreicht – +1 Punkt im Score ✓' : `Noch ${fmt(Math.max(0, goals.water_target - water))} ml bis zum Ziel (+1 Punkt)`}</p>
+      <div class="btn-row">
+        <button class="btn secondary" data-water="250" style="flex:1">+250 ml</button>
+        <button class="btn secondary" data-water="500" style="flex:1">+500 ml</button>
+        <button class="btn ghost" data-water="-250" aria-label="250 ml abziehen">−250</button>
+      </div>
+    </section>
+    <section class="card" data-reveal>
       <div class="card-title"><span>Noch ein Bier?</span>${icon('beer', '').replace('<svg', '<svg style="width:20px;height:20px;color:var(--accent)"')}</div>
       <p class="muted" style="margin:0 0 14px">Bevor du bestellst: Was kostet dich das nächste Bier – Wochenbudget, Score und Kalorien?</p>
       <button class="btn block" id="beer-btn">Entscheidungsrechner öffnen</button>
@@ -111,7 +125,7 @@ boot(async main => {
   countUp(document.getElementById('hw'), cur, 1);
   countUp(document.getElementById('hp'), Math.round(progress));
   countUp(document.getElementById('t-steps'), stepsToday);
-  countUp(document.getElementById('t-kcal'), day?.calories_kcal ?? null);
+  countUp(document.getElementById('t-kcal'), kcalToday);
   countUp(document.getElementById('t-beer'), week.beers, 0, 600);
   countUp(document.getElementById('t-green'), week.green, 0, 600);
   animateIn(() => {
@@ -128,6 +142,17 @@ boot(async main => {
 
   main.querySelector('[data-sync-inline]')?.addEventListener('click', () => document.querySelector('[data-sync]').click());
   document.getElementById('beer-btn').addEventListener('click', () => openBeer(ctx));
+  countUp(document.getElementById('t-water'), water, 0, 600);
+  main.querySelectorAll('[data-water]').forEach(b => b.addEventListener('click', async () => {
+    main.querySelectorAll('[data-water]').forEach(x => (x.disabled = true));
+    try {
+      await api(`/api/days/${today}`, { method: 'PATCH', body: { water_delta: Number(b.dataset.water) } });
+      document.dispatchEvent(new CustomEvent('datachange'));
+    } catch (ex) {
+      toast(ex.message, 'error');
+      main.querySelectorAll('[data-water]').forEach(x => (x.disabled = false));
+    }
+  }));
 });
 
 function part(name, v, max) {

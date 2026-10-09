@@ -51,6 +51,7 @@ boot(async main => {
         <div class="row"><span>Ø Score</span><b>${fmt(w.avgScore, 1)}</b></div>
         <div class="row"><span>Ø Schritte</span><b>${fmt(w.avgSteps)}</b></div>
         <div class="row"><span>Ø Kalorien</span><b>${w.avgKcal != null ? `${fmt(w.avgKcal)} kcal` : '–'}</b></div>
+        <div class="row"><span>Ø Wasser</span><b class="${w.avgWater == null ? '' : w.avgWater >= goals.water_target ? 'good' : 'warn'}">${w.avgWater != null ? `${fmt(w.avgWater)} ml` : '–'}</b></div>
         <div class="row"><span>Trainings</span><b>${w.trainings}</b></div>
       </div>
     </section>

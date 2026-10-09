@@ -28,10 +28,17 @@ export const onRequestPut = handler(async ({ params, request, env }) => {
 export const onRequestPatch = handler(async ({ params, request, env }) => {
   const date = assertDate(params.date);
   const body = await readJson(request);
-  if (!Number.isInteger(body.beer_delta) || Math.abs(body.beer_delta) > 5) throw new HttpError('beer_delta ungültig');
-  await env.DB.prepare(`INSERT INTO days (entry_date, beer_count) VALUES (?, MAX(0, ?))
-    ON CONFLICT(entry_date) DO UPDATE SET beer_count = MIN(40, MAX(0, beer_count + ?)), updated_at = datetime('now')`)
-    .bind(date, body.beer_delta, body.beer_delta).run();
+  if (body.water_delta !== undefined) {
+    if (!Number.isInteger(body.water_delta) || Math.abs(body.water_delta) > 2000) throw new HttpError('water_delta ungültig');
+    await env.DB.prepare(`INSERT INTO days (entry_date, water_ml) VALUES (?, MAX(0, ?))
+      ON CONFLICT(entry_date) DO UPDATE SET water_ml = MIN(15000, MAX(0, COALESCE(water_ml, 0) + ?)), updated_at = datetime('now')`)
+      .bind(date, body.water_delta, body.water_delta).run();
+  } else {
+    if (!Number.isInteger(body.beer_delta) || Math.abs(body.beer_delta) > 5) throw new HttpError('beer_delta ungültig');
+    await env.DB.prepare(`INSERT INTO days (entry_date, beer_count) VALUES (?, MAX(0, ?))
+      ON CONFLICT(entry_date) DO UPDATE SET beer_count = MIN(40, MAX(0, beer_count + ?)), updated_at = datetime('now')`)
+      .bind(date, body.beer_delta, body.beer_delta).run();
+  }
   const row = await env.DB.prepare('SELECT * FROM days WHERE entry_date = ?').bind(date).first();
   return json({ day: row });
 });

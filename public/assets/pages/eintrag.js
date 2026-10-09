@@ -14,6 +14,7 @@ boot(async main => {
   const day = daysByDate[date];
   const exists = hasEntry(day);
   const syncSteps = synced[date] ?? null;
+  const mfp = ctx.food[date] || null; // MyFitnessPal über Health Connect
 
   // Biere der Woche vor diesem Tag (für Wochenbudget im Score)
   let beersBefore = 0;
@@ -44,20 +45,21 @@ boot(async main => {
           <div class="input-wrap"><input id="walk_km" name="walk_km" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="${v('walk_km')}"><span class="suffix">km</span></div></div>
       </div>
 
-      <div class="field-label">Ernährung <span class="muted">(MyFitnessPal)</span></div>
+      <div class="field-label">Ernährung & Trinken <span class="muted">${mfp ? '· MyFitnessPal-Werte vorhanden' : '(MyFitnessPal)'}</span></div>
       <div class="form-grid">
         <div class="field"><label for="kcal">Kalorien</label>
-          <div class="input-wrap"><input id="kcal" name="calories_kcal" type="number" inputmode="numeric" min="0" max="10000" value="${v('calories_kcal')}" placeholder="Ziel ≤ ${goals.kcal_target}"><span class="suffix">kcal</span></div></div>
+          <div class="input-wrap"><input id="kcal" name="calories_kcal" type="number" inputmode="numeric" min="0" max="10000" value="${v('calories_kcal')}" placeholder="${mfp ? `MFP: ${fmt(mfp.kcal)}` : `Ziel ≤ ${goals.kcal_target}`}"><span class="suffix">kcal</span></div>
+          ${mfp ? `<span class="hint">Leer lassen = MyFitnessPal (${fmt(mfp.kcal)} kcal)</span>` : ''}</div>
         <div class="field"><label for="protein">Protein</label>
-          <div class="input-wrap"><input id="protein" name="protein_g" type="number" inputmode="numeric" min="0" max="600" value="${v('protein_g')}" placeholder="Ziel ≥ ${goals.protein_target}"><span class="suffix">g</span></div></div>
+          <div class="input-wrap"><input id="protein" name="protein_g" type="number" inputmode="numeric" min="0" max="600" value="${v('protein_g')}" placeholder="${mfp ? `MFP: ${fmt(mfp.protein)}` : `Ziel ≥ ${goals.protein_target}`}"><span class="suffix">g</span></div>
+          ${mfp ? `<span class="hint">Leer lassen = MyFitnessPal (${fmt(mfp.protein)} g)</span>` : ''}</div>
         <div class="field"><label for="water">Wasser</label>
-          <div class="input-wrap"><input id="water" name="water_ml" type="number" inputmode="numeric" min="0" max="15000" step="250" value="${v('water_ml')}"><span class="suffix">ml</span></div></div>
+          <div class="input-wrap"><input id="water" name="water_ml" type="number" inputmode="numeric" min="0" max="15000" step="250" value="${v('water_ml')}" placeholder="Ziel ≥ ${goals.water_target}"><span class="suffix">ml</span></div></div>
         <div class="field"><label>Bier (0,5 l)</label>
           <div class="stepper"><button type="button" data-step="-1" aria-label="Weniger Bier">−</button>
             <input name="beer_count" type="number" inputmode="numeric" min="0" max="40" value="${day?.beer_count ?? 0}" aria-label="Anzahl Bier">
             <button type="button" data-step="1" aria-label="Mehr Bier">+</button></div></div>
       </div>
-      <label class="toggle"><input type="checkbox" name="calories_tracked" ${day?.calories_tracked && day?.calories_kcal == null ? 'checked' : ''}><span>Getrackt, aber kcal unbekannt</span></label>
 
       <div class="field"><label for="note">Notiz</label><textarea id="note" name="note" maxlength="500" rows="2">${esc(v('note'))}</textarea></div>
 
@@ -90,9 +92,10 @@ boot(async main => {
       entry_date: date, created_at: 'preview',
       gym_kraft: fd.get('gym_kraft') ? 1 : 0, gym_kardio: fd.get('gym_kardio') ? 1 : 0,
       steps: n('steps'), walk_km: n('walk_km'), synced_steps: syncSteps,
+      synced_kcal: mfp?.kcal ?? null, synced_protein: mfp?.protein ?? null,
       calories_kcal: n('calories_kcal'), protein_g: n('protein_g'), water_ml: n('water_ml'),
       beer_count: n('beer_count') ?? 0,
-      calories_tracked: fd.get('calories_tracked') || n('calories_kcal') != null ? 1 : 0,
+      calories_tracked: n('calories_kcal') != null || mfp ? 1 : 0,
       note: fd.get('note'),
     };
   };

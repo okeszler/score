@@ -24,15 +24,23 @@ test('Kein Eintrag ist "none", nicht rot', () => {
 });
 
 test('Perfekter Tag = 10', () => {
-  const s = scoreDay(day('2026-10-05', { steps: 12000, gym_kraft: 1, calories_kcal: 1800, protein_g: 150 }), goals);
+  const s = scoreDay(day('2026-10-05', { steps: 12000, gym_kraft: 1, calories_kcal: 1800, protein_g: 150, water_ml: 2000 }), goals);
   assert.equal(s.total, 10);
   assert.equal(s.status, 'green');
 });
 
-test('Alter Datensatz 11.09.: kcal ohne "getrackt"-Haken zählt als getrackt', () => {
+test('Ernährung: kcal im Ziel, Protein, Wasser – je 1 Punkt', () => {
   const s = scoreDay(day('2026-09-11', { steps: 6000, calories_tracked: 0, calories_kcal: 1900, protein_g: 100 }), goals);
-  assert.deepEqual(s.parts, { bewegung: 1, ernaehrung: 2, alkohol: 3 });
-  assert.equal(s.status, 'orange');
+  assert.deepEqual(s.parts, { bewegung: 1, ernaehrung: 1, alkohol: 3 });
+  assert.equal(scoreDay(day('d', { water_ml: 1999 }), goals).parts.ernaehrung, 0);
+  assert.equal(scoreDay(day('d', { water_ml: 2000 }), goals).parts.ernaehrung, 1);
+  assert.equal(scoreDay(day('d', { water_ml: 1500 }), { water_target: 1500 }).parts.ernaehrung, 1);
+});
+
+test('MyFitnessPal-Import als Fallback, manuelle Werte haben Vorrang', () => {
+  assert.equal(scoreDay(day('d', { synced_kcal: 1800, synced_protein: 150 }), goals).parts.ernaehrung, 2);
+  assert.equal(scoreDay(day('d', { calories_kcal: 2500, synced_kcal: 1800 }), goals).parts.ernaehrung, 0);
+  assert.equal(scoreDay(day('d', { protein_g: 90, synced_protein: 150 }), goals).parts.ernaehrung, 0);
 });
 
 test('Wochenbudget überschritten -> Alkohol 0', () => {
@@ -58,7 +66,7 @@ test('scoreAll berücksichtigt laufendes Wochenbudget', () => {
 
 test('Wochenzusammenfassung und Streaks', () => {
   const days = {};
-  const green = d => day(d, { steps: 11000, calories_kcal: 1800, protein_g: 150 });
+  const green = d => day(d, { steps: 11000, calories_kcal: 1800, protein_g: 150, water_ml: 2500 });
   for (let i = 0; i < 7; i++) days[addDays('2026-09-28', i)] = green(addDays('2026-09-28', i));
   for (let i = 0; i < 3; i++) days[addDays('2026-10-05', i)] = green(addDays('2026-10-05', i));
   const scores = scoreAll(days, goals);

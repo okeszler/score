@@ -7,6 +7,7 @@ export const DEFAULT_GOALS = {
   weekly_beer_budget: 6,
   kcal_target: 2000,
   protein_target: 140,
+  water_target: 2000,
   steps_target: 10000,
   green_days_per_week: 5,
   start_weight_kg: null,
@@ -86,8 +87,18 @@ export function effectiveSteps(day) {
   return null;
 }
 
+// Ernährung: manueller Wert > MyFitnessPal-Import (Health Connect)
+export function effectiveKcal(day) {
+  if (!day) return null;
+  return day.calories_kcal ?? day.synced_kcal ?? null;
+}
+export function effectiveProtein(day) {
+  if (!day) return null;
+  return day.protein_g ?? day.synced_protein ?? null;
+}
+
 export function caloriesTracked(day) {
-  return !!day && (day.calories_tracked === 1 || day.calories_tracked === true || day.calories_kcal != null);
+  return !!day && (day.calories_tracked === 1 || day.calories_tracked === true || effectiveKcal(day) != null);
 }
 
 export function hasEntry(day) {
@@ -97,7 +108,7 @@ export function hasEntry(day) {
 /**
  * Tages-Score 0–10.
  *  Bewegung (max 4): Schritte vs. Ziel (3 Punkte) + Training (1 Punkt)
- *  Ernährung (max 3): getrackt, kcal im Ziel, Protein erreicht
+ *  Ernährung (max 3): kcal im Ziel, Protein erreicht, Wasser erreicht
  *  Alkohol (max 3): 0 Bier = 3, 1 = 2, 2 = 1, ab 3 = 0; Wochenbudget überschritten = 0
  * @param beersBefore Biere in derselben Woche VOR diesem Tag
  */
@@ -114,12 +125,11 @@ export function scoreDay(day, goals, beersBefore = 0) {
   const trained = !!(day.gym_kraft || day.gym_kardio);
   const bewegung = Math.min(4, stepPts + (trained ? 1 : 0));
 
+  const kcal = effectiveKcal(day), protein = effectiveProtein(day);
   let ernaehrung = 0;
-  if (caloriesTracked(day)) {
-    ernaehrung += 1;
-    if (day.calories_kcal != null && day.calories_kcal <= g.kcal_target) ernaehrung += 1;
-    if (day.protein_g != null && day.protein_g >= g.protein_target) ernaehrung += 1;
-  }
+  if (kcal != null && kcal <= g.kcal_target) ernaehrung += 1;
+  if (protein != null && protein >= g.protein_target) ernaehrung += 1;
+  if (day.water_ml != null && day.water_ml >= g.water_target) ernaehrung += 1;
 
   const beers = day.beer_count || 0;
   let alkohol = [3, 2, 1][beers] ?? 0;
@@ -157,7 +167,7 @@ export function weekSummary(daysByDate, scores, goals, monday, today) {
   const g = mergeGoals(goals);
   const days = [];
   let green = 0, logged = 0, beers = 0, alcoholFree = 0, riskDays = 0, trainings = 0;
-  let stepsSum = 0, stepsN = 0, kcalSum = 0, kcalN = 0, scoreSum = 0;
+  let stepsSum = 0, stepsN = 0, kcalSum = 0, kcalN = 0, waterSum = 0, waterN = 0, scoreSum = 0;
   for (let i = 0; i < 7; i++) {
     const date = addDays(monday, i);
     const day = daysByDate[date];
@@ -175,7 +185,9 @@ export function weekSummary(daysByDate, scores, goals, monday, today) {
     if (day.gym_kraft || day.gym_kardio) trainings++;
     const st = effectiveSteps(day);
     if (st != null) { stepsSum += st; stepsN++; }
-    if (day.calories_kcal != null) { kcalSum += day.calories_kcal; kcalN++; }
+    const kc = effectiveKcal(day);
+    if (kc != null) { kcalSum += kc; kcalN++; }
+    if (day.water_ml != null) { waterSum += day.water_ml; waterN++; }
   }
   return {
     monday, days, green, logged, beers, alcoholFree, riskDays, trainings,
@@ -184,6 +196,7 @@ export function weekSummary(daysByDate, scores, goals, monday, today) {
     avgScore: logged ? scoreSum / logged : null,
     avgSteps: stepsN ? Math.round(stepsSum / stepsN) : null,
     avgKcal: kcalN ? Math.round(kcalSum / kcalN) : null,
+    avgWater: waterN ? Math.round(waterSum / waterN) : null,
     alcoholG: beers * BEER.alcoholG,
     alcoholBudgetG: g.weekly_beer_budget * BEER.alcoholG,
     beerBudget: g.weekly_beer_budget,

@@ -102,7 +102,7 @@ export async function loadContext(daysBack = 120) {
   const lastWeight = [...weights].reverse().find(w => w.weight_kg != null) || null;
   const firstWeight = weights.find(w => w.weight_kg != null) || null;
   const lastFat = [...weights].reverse().find(w => w.body_fat_pct != null) || null;
-  return { today: t, goals, daysByDate, scores, weights, synced: data.synced, lastWeight, firstWeight, lastFat };
+  return { today: t, goals, daysByDate, scores, weights, synced: data.synced, food: data.food || {}, lastWeight, firstWeight, lastFat };
 }
 
 // ---------- Formatierung ----------

@@ -19,7 +19,7 @@ Wochenziel, Gewichtstrend und Health-Connect-Sync aus Google Drive.
 ## Score (0–10)
 
 - **Bewegung (max. 4):** Schritte ≥ 100 % Ziel = 3, ≥ 75 % = 2, ≥ 50 % = 1; Training +1
-- **Ernährung (max. 3):** getrackt +1, kcal ≤ Ziel +1, Protein ≥ Ziel +1
+- **Ernährung & Trinken (max. 3):** kcal ≤ Ziel +1, Protein ≥ Ziel +1, Wasser ≥ Ziel (Standard 2 l) +1
 - **Alkohol (max. 3):** 0 Bier = 3, 1 = 2, 2 = 1, ab 3 = 0; Wochenbudget überschritten = 0
 - **Ampel:** Grün ≥ 7, Orange ≥ 4, sonst Rot. Tage ohne Eintrag sind grau.
 
@@ -65,6 +65,13 @@ Ordner haben. Der Sync
   (alternativ in den Einstellungen). Danach fragt die Login-Seite auf diesem Gerät direkt den Fingerabdruck ab.
   Gespeichert wird nur der öffentliche Schlüssel (`webauthn_credentials`); Prüfung in `lib/webauthn.js`
   (Origin, RP-ID, Nutzer-Verifikation, Signatur, Zähler, zeitlich begrenzte signierte Challenge).
+
+## Ernährung (MyFitnessPal)
+
+MyFitnessPal schreibt Mahlzeiten nach Health Connect, Health Sync exportiert sie als
+„Ernährung … Health Connect.csv“ in den Drive-Ordner „Health Sync Ernährung“ (muss mit dem Service Account geteilt sein).
+Der Sync bildet Tagessummen für kcal und Protein (`sync_nutrition_daily`, neuester Export gewinnt).
+Manuell eingetragene Werte haben Vorrang. Wasser wird nicht exportiert und wird in Score erfasst (+250/+500 ml auf der Startseite).
 
 ## Automatischer Sync (Cron)
 
