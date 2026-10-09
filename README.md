@@ -129,6 +129,10 @@ Gefundene Fehler und Logikprobleme, die in dieser Version behoben sind:
 
 ## Verbesserungsvorschläge (noch offen)
 
+- **Auswertung „Bier → Nacht“** (vorgemerkt, Oliver sammelt erst Daten, Stand 10/2026): Ruhepuls und Tiefschlaf
+  nach 0 / 1–2 / 3+ Bier vergleichen, dazu Schlafdauer vs. kcal am Folgetag. Uhr wird nicht jede Nacht getragen,
+  daher erst ab genügend Nächten je Gruppe anzeigen; Schlaf bewusst nicht im Score.
+
 - **Wiegen-Routine:** Die letzte Messung ist vom 15.08. Ohne 2–3 Messungen pro Woche gibt es keinen Trend und
   keine Prognose. Health-Connect-Export für Gewicht wieder aktivieren (aktuell nur bis 14.08. in Drive).
 - **MyFitnessPal-Import:** MFP bietet keine offene API; ein CSV-Export (Premium) ließe sich wie Health Connect
