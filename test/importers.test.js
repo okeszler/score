@@ -80,3 +80,17 @@ test('Ernährung: neuerer Export ohne Protein, älterer Tagesexport füllt Prote
   r = await db.prepare('SELECT * FROM sync_nutrition_daily').first();
   assert.equal(r.protein_g, 90);
 });
+
+test('Ernährung: Tagesexport mit nachgetragener Mahlzeit, kurz danach 30-Tage-Export (Fall 14.10.)', async () => {
+  const db = await setup();
+  const head = 'Datum,Zeit,Mahlzeit,Name,Beschreibung,kcal,Kohlenhydrate (Gramm)';
+  const two = `${head},Protein (g)\n2026.10.14 10:00:00,10:00:00,1,null,null,500,57,27.2\n2026.10.14 10:00:00,10:00:00,2,null,null,825.75,48.6,63.46\n`;
+  const three = two + '2026.10.14 10:00:00,10:00:00,3,null,null,1058.2,103,27.65\n';
+  const range = `${head}\n2026.10.14 10:00:00,10:00:00,1,null,null,500,57\n2026.10.14 10:00:00,10:00:00,2,null,null,825.75,48.6\n2026.10.14 10:00:00,10:00:00,3,null,null,1058.2,103\n`;
+  await run(db, 'ernaehrung', two, 'a.csv', '2026-10-14T20:00:00Z');       // abends: 2 Mahlzeiten
+  // am Folgetag nachgetragen; der Sync verarbeitet den neueren 30-Tage-Export zuerst
+  await run(db, 'ernaehrung', range, 'r.csv', '2026-10-15T09:26:37Z');
+  await run(db, 'ernaehrung', three, 'b.csv', '2026-10-15T09:26:31Z');
+  const r = await db.prepare('SELECT kcal, protein_g FROM sync_nutrition_daily').first();
+  assert.deepEqual([r.kcal, r.protein_g], [2384, 118]);
+});
