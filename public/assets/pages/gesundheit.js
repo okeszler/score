@@ -14,8 +14,9 @@ const ACT = { WALKING: 'Gehen', RUNNING: 'Laufen', BIKING: 'Radfahren', CYCLING:
   STRENGTH_TRAINING: 'Krafttraining', WEIGHTLIFTING: 'Krafttraining', HIKING: 'Wandern', ELLIPTICAL: 'Crosstrainer',
   ROWING: 'Rudern', YOGA: 'Yoga', OTHER: 'Sonstiges', WORKOUT: 'Training' };
 const actLabel = t => ACT[t] || (t ? t.charAt(0) + t.slice(1).toLowerCase().replace(/_/g, ' ') : 'Aktivität');
-const hm = s => (s == null ? '–' : `${Math.floor(s / 3600)}:${String(Math.round((s % 3600) / 60)).padStart(2, '0')}`);
-const clock = ms => new Date(ms).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+const hm = s => { if (s == null) return '–'; const m = Math.round(s / 60); return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`; };
+// Der Server rechnet die lokalen Zeitstempel der Uhr als UTC in ms um -> hier auch als UTC ausgeben
+const clock = ms => new Date(ms).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
 const STAGE_COLOR = { deep: 'var(--hero)', rem: 'var(--blue)', light: 'color-mix(in srgb, var(--blue) 45%, var(--surface-2))', awake: 'var(--warn)' };
 const avg = a => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : null);
 
@@ -125,7 +126,7 @@ boot(async main => {
       </div>
       <div class="sleepbar" aria-label="Schlafphasen letzte Nacht">${h.lastNightSegments.map(sg => {
         const w = ((sg.end - sg.start) / (lastNight.wake - lastNight.bed)) * 100;
-        return `<i style="width:${w}%;background:${STAGE_COLOR[sg.stage] || 'var(--blue)'}" title="${STAGE_LABELS[sg.stage] || sg.stage} ${clock(sg.start)}–${clock(sg.end)}"></i>`;
+        return `<i style="width:${w}%;background:${STAGE_COLOR[sg.stage] || 'var(--blue)'}" title="${esc(STAGE_LABELS[sg.stage] || sg.stage)} ${clock(sg.start)}–${clock(sg.end)}"></i>`;
       }).join('')}</div>
       <div class="legend">${['deep', 'rem', 'light', 'awake'].map(s => `<span><i style="background:${STAGE_COLOR[s]}"></i>${STAGE_LABELS[s]}</span>`).join('')}</div>` : '<div class="empty-state">Noch keine Schlafdaten.</div>'}
     <div id="ch-sleep" style="margin-top:16px"></div>
@@ -164,7 +165,7 @@ boot(async main => {
     <div class="card-title">Aktivitäten</div>
     <div class="list wrap">${h.activities.slice(0, 8).map(a => `
       <div class="list-item"><div class="dot" style="background:var(--blue)">${icon('flex').replace('<svg', '<svg style="width:18px;height:18px"')}</div>
-        <div class="meta"><b>${actLabel(a.activity_type)} · ${hm(a.active_seconds ?? a.elapsed_seconds)} h</b>
+        <div class="meta"><b>${esc(actLabel(a.activity_type))} · ${hm(a.active_seconds ?? a.elapsed_seconds)} h</b>
         <span>${fmtDate(a.entry_date)} ${a.start_time ? a.start_time.slice(0, 5) : ''}${a.distance_km ? ` · ${fmt(a.distance_km, 2)} km` : ''}${a.calories ? ` · ${fmt(a.calories)} kcal` : ''}${a.steps ? ` · ${fmt(a.steps)} Schritte` : ''}${a.avg_hr ? ` · Ø ${fmt(a.avg_hr)} bpm` : ''}</span></div></div>`).join('') || '<div class="empty-state">Noch keine Aktivitäten.</div>'}</div>
   </section>`;
 

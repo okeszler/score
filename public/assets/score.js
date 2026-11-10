@@ -242,10 +242,11 @@ export function weekSummary(daysByDate, scores, goals, monday, today) {
   };
 }
 
-/** Grüne Tage in Folge, endend heute (oder gestern, falls heute noch nichts eingetragen ist). */
+/** Grüne Tage in Folge, endend heute (oder gestern, solange heute noch nicht grün ist). */
 export function activeStreak(scores, today) {
   let d = today;
-  if (!scores[d] || scores[d].status === 'none') d = addDays(d, -1);
+  // Heute zählt erst, wenn der Tag grün ist – ein noch laufender Tag unterbricht die Serie nicht
+  if (!scores[d] || scores[d].status !== 'green') d = addDays(d, -1);
   let n = 0;
   while (scores[d] && scores[d].status === 'green') { n++; d = addDays(d, -1); }
   return n;

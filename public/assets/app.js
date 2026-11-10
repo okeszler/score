@@ -259,5 +259,11 @@ export async function boot(render) {
     }
   };
   document.addEventListener('datachange', run);
+  // App blieb über Nacht offen (installierte App): beim Zurückkehren den neuen Tag laden,
+  // sonst würden +Wasser/+Bier auf den gestrigen Tag gebucht
+  let shown = today();
+  const refresh = () => { if (document.visibilityState === 'visible' && today() !== shown) { shown = today(); run(); } };
+  document.addEventListener('visibilitychange', refresh);
+  window.addEventListener('pageshow', refresh);
   await run();
 }

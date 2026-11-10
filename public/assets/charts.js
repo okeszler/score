@@ -1,6 +1,6 @@
 // Leichte SVG-Charts ohne Abhängigkeiten: Zeitachse, monotone Kurven, Zielgerade, Tooltip, Animation.
 import { daysBetween, parseDate } from './score.js';
-import { fmt } from './app.js';
+import { esc, fmt } from './app.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -158,7 +158,7 @@ export function lineChart(container, opts) {
         const q = p.pts.find(v => v.x === best);
         if (q) {
           dots[i].setAttribute('cx', cx); dots[i].setAttribute('cy', Y(q.y)); dots[i].style.opacity = 1;
-          lines.push(`<span>${p.s.name}</span> <b>${fmt(q.y, opts.decimals ?? 1)}${opts.unit ? ' ' + opts.unit : ''}</b>`);
+          lines.push(`<span>${esc(p.s.name)}</span> <b>${fmt(q.y, opts.decimals ?? 1)}${opts.unit ? ' ' + opts.unit : ''}</b>`);
         } else dots[i].style.opacity = 0;
       });
       const topY = Math.min(...plotted.map(p => p.pts.find(v => v.x === best)).filter(Boolean).map(q => Y(q.y)));

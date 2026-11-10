@@ -116,3 +116,13 @@ test('Vorläufige Tage aus importierten Daten: 0 Bier angenommen, zählen nicht 
   assert.equal(w.provisional, 2);
   assert.equal(w.alcoholFree, 0);
 });
+
+test('Aktiv-Streak: ein laufender, noch nicht grüner Tag unterbricht die Serie nicht', async () => {
+  const { activeStreak } = await import('../public/assets/score.js');
+  const s = { '2026-11-07': { status: 'green' }, '2026-11-08': { status: 'green' }, '2026-11-09': { status: 'green' }, '2026-11-10': { status: 'red', provisional: true } };
+  assert.equal(activeStreak(s, '2026-11-10'), 3);
+  s['2026-11-10'] = { status: 'green' };
+  assert.equal(activeStreak(s, '2026-11-10'), 4);
+  s['2026-11-09'] = { status: 'orange' };
+  assert.equal(activeStreak(s, '2026-11-10'), 1);
+});

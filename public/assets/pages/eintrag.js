@@ -1,5 +1,5 @@
-import { addDays, effectiveSteps, isConfirmed, isValidDate, scoreDay, weekStart } from '../score.js';
-import { animateIn, api, boot, confirmDialog, esc, fmt, fmtDate, fmtLong, icon, loadContext, ring, shell, statusLabel, toast } from '../app.js';
+import { addDays, daysBetween, effectiveKcal, effectiveSteps, isConfirmed, isValidDate, scoreDay, weekStart } from '../score.js';
+import { animateIn, api, boot, confirmDialog, esc, fmt, fmtDate, fmtLong, icon, loadContext, ring, shell, statusLabel, toast, today as todayIso } from '../app.js';
 
 shell({ page: 'eintrag', title: 'Eintragen', subtitle: 'Bewegung · Ernährung · Alkohol' });
 
@@ -7,9 +7,12 @@ let dirty = false;
 addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 
 boot(async main => {
-  const ctx = await loadContext(60);
-  const { today, goals, daysByDate, scores, synced } = ctx;
   let date = new URLSearchParams(location.search).get('date');
+  // Ältere Tage (aus Verlauf/Woche verlinkt) müssen mitgeladen werden – sonst würde das Formular
+  // leer starten und beim Speichern den vorhandenen Eintrag überschreiben.
+  const back = isValidDate(date) ? daysBetween(date, todayIso()) : 0;
+  const ctx = await loadContext(Math.max(60, back + 7));
+  const { today, goals, daysByDate, scores, synced } = ctx;
   if (!isValidDate(date) || date > today) date = today;
   const day = daysByDate[date];
   const exists = isConfirmed(day);
@@ -54,7 +57,7 @@ boot(async main => {
           <div class="input-wrap"><input id="protein" name="protein_g" type="number" inputmode="numeric" min="0" max="600" value="${v('protein_g')}" placeholder="${mfp ? `MFP: ${fmt(mfp.protein)}` : `Ziel ≥ ${goals.protein_target}`}"><span class="suffix">g</span></div>
           ${mfp ? `<span class="hint">Leer lassen = MyFitnessPal (${fmt(mfp.protein)} g)</span>` : ''}</div>
         <div class="field"><label for="water">Wasser</label>
-          <div class="input-wrap"><input id="water" name="water_ml" type="number" inputmode="numeric" min="0" max="15000" step="250" value="${v('water_ml')}" placeholder="Ziel ≥ ${goals.water_target}"><span class="suffix">ml</span></div>
+          <div class="input-wrap"><input id="water" name="water_ml" type="number" inputmode="numeric" min="0" max="15000" step="1" value="${v('water_ml')}" placeholder="Ziel ≥ ${goals.water_target}"><span class="suffix">ml</span></div>
           <span class="hint">Jedes Bier zählt zusätzlich mit 250 ml</span></div>
         <div class="field"><label>Bier (0,5 l)</label>
           <div class="stepper"><button type="button" data-step="-1" aria-label="Weniger Bier">−</button>
@@ -163,7 +166,7 @@ boot(async main => {
     return `<div class="list-item st-${s.status}">
       <div class="dot">${s.total}</div>
       <div class="meta"><b>${fmtDate(d.entry_date)}${d.entry_date === date ? ' · <span class="muted">offen</span>' : ''}</b>
-        <span>${st != null ? `${fmt(st)} Schritte` : 'keine Schritte'} · ${d.calories_kcal != null ? `${fmt(d.calories_kcal)} kcal` : 'kcal –'} · ${d.beer_count || 0} Bier${d.gym_kraft || d.gym_kardio ? ' · Gym' : ''}</span></div>
+        <span>${st != null ? `${fmt(st)} Schritte` : 'keine Schritte'} · ${effectiveKcal(d) != null ? `${fmt(effectiveKcal(d))} kcal` : 'kcal –'} · ${d.beer_count || 0} Bier${d.gym_kraft || d.gym_kardio ? ' · Gym' : ''}</span></div>
       <div class="actions"><a href="/eintrag?date=${d.entry_date}" class="icon-btn" style="width:34px;height:34px;border:0" aria-label="Bearbeiten">${icon('edit')}</a></div>
     </div>`;
   }).join('') : '<div class="empty-state">Noch keine Einträge.</div>';

@@ -50,6 +50,12 @@ async function runSync(env) {
   const token = await getAccessToken(env.GOOGLE_SERVICE_ACCOUNT_JSON);
   const files = await listHealthFiles(token);
 
+  // Health Sync legt Dateien bei jeder Aktualisierung neu an (neue Drive-ID). Einträge zu Dateien,
+  // die es in Drive nicht mehr gibt, entfernen – sonst wächst die Tabelle um >100 Zeilen pro Tag.
+  if (files.length) {
+    await env.DB.prepare('DELETE FROM sync_files WHERE drive_file_id NOT IN (SELECT value FROM json_each(?))')
+      .bind(JSON.stringify(files.map(f => f.id))).run();
+  }
   const { results: known } = await env.DB.prepare('SELECT drive_file_id, category, modified_time FROM sync_files').all();
   const done = new Map(known.map(k => [k.drive_file_id, k]));
   const pending = files.filter(f => {
@@ -92,6 +98,8 @@ async function runSync(env) {
       if (RANGE_CATS.has(f.category) && range) covered.push({ cat: f.category, ...range });
       report.imported.push(f.name);
     } catch (e) {
+      // Datei wurde zwischen Auflisten und Download von Health Sync ersetzt: kein Fehler, nächster Lauf holt die neue
+      if (/\(404\)/.test(e.message)) { report.skipped++; continue; }
       report.errors.push(`${f.name}: ${e.message}`);
       // Dauerhaft unlesbare Datei (falsches Format) nicht bei jedem Lauf erneut versuchen
       if (e instanceof FormatError) await markDone(f, 'fehler').run();

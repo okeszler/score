@@ -1,4 +1,4 @@
-import { addDays, activeStreak, BEER, isValidDate, MIN_ALCOHOL_FREE_DAYS, RISK_DAY_G, weekStart, weekStreak, weekSummary, daysBetween } from '../score.js';
+import { addDays, activeStreak, BEER, isConfirmed, isValidDate, MIN_ALCOHOL_FREE_DAYS, RISK_DAY_G, weekStart, weekStreak, weekSummary, daysBetween } from '../score.js';
 import { animateIn, boot, countUp, fmt, fmtDate, icon, loadContext, shell } from '../app.js';
 
 shell({ page: 'woche', title: 'Woche', subtitle: 'Grüne Tage, Streaks & Bier' });
@@ -15,10 +15,12 @@ boot(async main => {
   const w = weekSummary(daysByDate, scores, goals, monday, today);
   const sunday = addDays(monday, 6);
   const daysLeft = isCurrent ? 7 - (daysBetween(monday, today) + 1) : 0;
+  // heute kann noch grün bzw. alkoholfrei werden
+  const todayOpen = isCurrent && scores[today]?.status !== 'green' ? 1 : 0;
   const greenPct = Math.min(100, (w.green / w.goalGreen) * 100);
   const alcPct = Math.min(100, (w.alcoholG / Math.max(1, w.alcoholBudgetG)) * 100);
   const afOk = w.alcoholFree >= MIN_ALCOHOL_FREE_DAYS;
-  const afPossible = w.alcoholFree + daysLeft >= MIN_ALCOHOL_FREE_DAYS;
+  const afPossible = w.alcoholFree + daysLeft + (isCurrent && !isConfirmed(daysByDate[today]) ? 1 : 0) >= MIN_ALCOHOL_FREE_DAYS;
 
   main.innerHTML = `
   <div class="weekbar" data-reveal>
@@ -38,7 +40,7 @@ boot(async main => {
       <div class="row" style="border:0;padding-top:0"><span>Grüne Tage</span><b><span id="g">0</span> von ${w.goalGreen} ${w.reached ? '✓' : ''}</b></div>
       <div class="progress ${w.reached ? '' : 'warn'}"><i data-w="${greenPct}"></i></div>
       <p class="muted" style="font-size:.85rem;margin:10px 0 0">${w.logged - w.provisional} von ${isCurrent ? 7 - daysLeft : 7} Tagen bestätigt${w.provisional ? ` · ${w.provisional} vorläufig (Bier unbestätigt)` : ''}${
-        isCurrent && !w.reached ? ` · noch ${daysLeft} ${daysLeft === 1 ? 'Tag' : 'Tage'}, ${Math.max(0, w.goalGreen - w.green)} grüne fehlen${w.goalGreen - w.green > daysLeft ? ' – diese Woche nicht mehr erreichbar' : ''}` : ''}</p>
+        isCurrent && !w.reached ? ` · noch ${daysLeft} ${daysLeft === 1 ? 'Tag' : 'Tage'}, ${Math.max(0, w.goalGreen - w.green)} grüne fehlen${w.goalGreen - w.green > daysLeft + todayOpen ? ' – diese Woche nicht mehr erreichbar' : ''}` : ''}</p>
     </div>
   </section>
 

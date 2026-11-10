@@ -1,10 +1,11 @@
+import { signingKey } from '../../../lib/auth.js';
 import { json, handler } from '../../../lib/http.js';
 import { createChallenge } from '../../../lib/webauthn.js';
 
 // Nur mit gültiger Session erreichbar (Middleware)
 export const onRequestGet = handler(async ({ request, env }) => {
   const { hostname } = new URL(request.url);
-  const { token, challenge } = await createChallenge(env.APP_PASSWORD, 'register');
+  const { token, challenge } = await createChallenge(await signingKey(env), 'register');
   const { results } = await env.DB.prepare('SELECT id FROM webauthn_credentials').all();
   return json({
     token, challenge,
