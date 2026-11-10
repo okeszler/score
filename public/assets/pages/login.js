@@ -78,7 +78,12 @@ form.addEventListener('submit', async e => {
 function goNext() {
   const next = new URLSearchParams(location.search).get('next') || '/';
   // Nur relative Pfade zulassen (kein Open Redirect)
-  location.href = next.startsWith('/') && !next.startsWith('//') ? next : '/';
+  let target = '/';
+  try {
+    const u = new URL(next, location.origin);
+    if (u.origin === location.origin) target = u.pathname + u.search;
+  } catch {}
+  location.href = target;
 }
 
 // ---------- Fingerabdruck (Passkey) ----------

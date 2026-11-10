@@ -1,4 +1,4 @@
-import { safeEqual, verifySession } from '../lib/auth.js';
+import { safeEqual, signingKey, verifySession } from '../lib/auth.js';
 import { ensureSchema } from '../lib/db.js';
 import { error } from '../lib/http.js';
 
@@ -11,8 +11,17 @@ export async function onRequest(ctx) {
   const path = url.pathname;
 
   if (!env.APP_PASSWORD) return new Response('APP_PASSWORD ist nicht gesetzt', { status: 500 });
+  if (!env.SESSION_SECRET && !env.CRON_SECRET) return new Response('SESSION_SECRET ist nicht gesetzt', { status: 500 });
 
-  if (!PUBLIC.some(r => r.test(path)) && !isCron(request, env, path) && !(await verifySession(request, env.APP_PASSWORD))) {
+  // Schreibzugriffe nur von der eigenen Seite (zusätzlich zu SameSite=Lax)
+  const origin = request.headers.get('Origin');
+  if (origin && origin !== url.origin && !['GET', 'HEAD'].includes(request.method)) return error('Fremde Herkunft', 403);
+  // Schnelltasten (/?quick=…) tragen sofort ein – nicht über Links von fremden Seiten auslösbar
+  if (url.searchParams.has('quick') && request.headers.get('Sec-Fetch-Site') === 'cross-site') {
+    return Response.redirect(new URL('/', url).toString(), 302);
+  }
+
+  if (!PUBLIC.some(r => r.test(path)) && !isCron(request, env, path) && !(await verifySession(request, await signingKey(env)))) {
     if (path.startsWith('/api/')) return error('Nicht angemeldet', 401);
     const target = `/login?next=${encodeURIComponent(path + url.search)}`;
     return Response.redirect(new URL(target, url).toString(), 302);

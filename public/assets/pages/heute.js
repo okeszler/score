@@ -20,7 +20,7 @@ boot(async main => {
   await quickDone;
   const [ctx, health, settings] = await Promise.all([
     loadContext(35),
-    api(`/api/health?from=${addDays(new Date().toISOString().slice(0, 10), -30)}`).catch(() => null),
+    api(`/api/health?from=${addDays(todayIso(), -30)}`).catch(() => null),
     api('/api/settings').then(r => r.settings).catch(() => ({})),
   ]);
   const { today, goals, daysByDate, scores, lastWeight, firstWeight, synced } = ctx;
@@ -67,7 +67,7 @@ boot(async main => {
       <div class="hero-cells">
         <div><b>${start != null ? fmt(start, 1) : '–'}<small>kg</small></b><span>Start</span></div>
         <div><b>${trend ? `${trend.perWeek > 0 ? '+' : ''}${fmt(trend.perWeek, 2)}` : '–'}<small>kg/Wo</small></b><span>Trend (6 Wo.)</span></div>
-        <div><b>${trend?.eta ? fmtDate(trend.eta, { month: 'short', year: '2-digit' }) : '–'}</b><span>Prognose 85 kg</span></div>
+        <div><b>${trend?.eta ? fmtDate(trend.eta, { month: 'short', year: 'numeric' }) : '–'}</b><span>Prognose ${fmt(goals.weight_kg)} kg</span></div>
       </div>
     </section>
   </div>
@@ -244,7 +244,7 @@ function openBeer(ctx) {
 }
 
 function healthRow(h) {
-  const hm = s => `${Math.floor(s / 3600)}:${String(Math.round((s % 3600) / 60)).padStart(2, '0')}`;
+  const hm = s => { const m = Math.round(s / 60); return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`; };
   const rest = h.pulse.filter(p => p.resting != null).at(-1);
   const night = h.nights.at(-1);
   const bp = h.bloodPressure.at(-1);

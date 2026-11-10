@@ -68,6 +68,11 @@ Ordner haben. Der Sync
 ## Anmeldung
 
 - **PIN** über das Ziffernfeld (Secret `APP_PASSWORD`), Session-Cookie 30 Tage.
+  Nach 5 Fehlversuchen wird die PIN-Anmeldung gesperrt (1 min, dann 2, 4 … bis 1 h; Zähler in `auth_state`,
+  atomar, also auch gegen parallele Anfragen). Der Fingerabdruck funktioniert während einer Sperre weiter.
+- **Signierschlüssel:** Cookies und WebAuthn-Challenges werden mit `HMAC(SESSION_SECRET, PIN)` signiert
+  (`SESSION_SECRET`, ersatzweise `CRON_SECRET`) – nie mit der PIN selbst, sonst ließe sie sich offline erraten.
+- Schreibende Anfragen nur von der eigenen Herkunft (Origin-Prüfung); `/?quick=…` nicht von fremden Seiten.
 - **Fingerabdruck (Passkey/WebAuthn):** Nach der PIN-Anmeldung wird einmalig angeboten, den Fingerabdruck einzurichten
   (alternativ in den Einstellungen). Danach fragt die Login-Seite auf diesem Gerät direkt den Fingerabdruck ab.
   Gespeichert wird nur der öffentliche Schlüssel (`webauthn_credentials`); Prüfung in `lib/webauthn.js`

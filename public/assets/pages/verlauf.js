@@ -1,4 +1,4 @@
-import { addDays, effectiveSteps, isConfirmed, parseDate, statusFor, weekStart, weekSummary } from '../score.js';
+import { addDays, effectiveKcal, effectiveSteps, isConfirmed, parseDate, statusFor, weekStart, weekSummary } from '../score.js';
 import { boot, fmt, fmtDate, loadContext, shell, statusLabel } from '../app.js';
 import { barChart, lineChart } from '../charts.js';
 
@@ -42,7 +42,7 @@ boot(async main => {
     const cur = daysByDate[d];
     if (!isConfirmed(prev) || !isConfirmed(cur)) continue; // nur bestätigte Tage (Bier bekannt)
     const st = effectiveSteps(cur);
-    (prev.beer_count > 0 ? after.beer : after.none).push({ steps: st, score: scores[d].total, tracked: cur.calories_kcal != null });
+    (prev.beer_count > 0 ? after.beer : after.none).push({ steps: st, score: scores[d].total, tracked: effectiveKcal(cur) != null });
   }
   const avg = (arr, k) => { const v = arr.map(x => x[k]).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   const rate = arr => (arr.length ? (arr.filter(x => x.tracked).length / arr.length) * 100 : null);

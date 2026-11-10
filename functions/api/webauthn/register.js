@@ -1,3 +1,4 @@
+import { signingKey } from '../../../lib/auth.js';
 import { json, readJson, handler, HttpError } from '../../../lib/http.js';
 import { text } from '../../../lib/validate.js';
 import { verifyRegistration } from '../../../lib/webauthn.js';
@@ -7,7 +8,7 @@ export const onRequestPost = handler(async ({ request, env }) => {
   const url = new URL(request.url);
   let cred;
   try {
-    cred = await verifyRegistration({ secret: env.APP_PASSWORD, token: body.token, origin: url.origin, rpId: url.hostname, body });
+    cred = await verifyRegistration({ secret: await signingKey(env), token: body.token, origin: url.origin, rpId: url.hostname, body });
   } catch (e) {
     throw new HttpError(`Einrichtung fehlgeschlagen: ${e.message}`, 400);
   }
