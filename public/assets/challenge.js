@@ -43,8 +43,6 @@ export function openStart(today) {
         <li>Alkoholfreier Tag: <b>+2 Bonuspunkte</b></li>
         <li>Tag mit Alkohol: höchstens <b>Orange</b></li>
       </ul>
-      <p class="safety">${icon('heart')}<span>Nach Wochen mit täglichem Alkohol kann ein abruptes Aufhören Schlafstörungen, Zittern oder Schwitzen auslösen.
-        Bei starken Beschwerden: Hausarzt oder <b>1450</b> anrufen.</span></p>
       <button class="btn block" type="submit">Los geht's</button>
     </form>`, {
     onOpen: (m, close) => m.querySelector('form').addEventListener('submit', async e => {
@@ -52,8 +50,7 @@ export function openStart(today) {
       const f = e.target;
       if (!f.start.value || !f.check.value || f.check.value <= f.start.value) { toast('Kontrolltermin muss nach dem Start liegen', 'error'); return; }
       try {
-        // Der Hinweis wurde hier gezeigt -> nicht noch einmal einblenden
-        await saveChallenge({ start: f.start.value, check: f.check.value, safety_ack: true });
+        await saveChallenge({ start: f.start.value, check: f.check.value });
         toast('Challenge gestartet', 'success');
         close();
         document.dispatchEvent(new CustomEvent('datachange'));
@@ -93,16 +90,11 @@ export function challengeCard(st, ch) {
       <button class="btn" id="crave-btn" style="flex:1">Ich habe Lust auf Alkohol</button>
       <button class="btn secondary" id="drink-btn" style="flex:1">Ich will etwas trinken</button>
     </div>
-    ${ch.safety_ack ? '' : `<p class="safety">${icon('heart')}<span>Nach Wochen mit täglichem Alkohol kann ein abruptes Aufhören Schlafstörungen, Zittern oder Schwitzen auslösen.
-      Bei starken Beschwerden: Hausarzt oder <b>1450</b>. <button class="btn ghost" id="safety-ok" style="padding:0">Verstanden</button></span></p>`}
   </section>`;
 }
 
-/** Nach dem Rendern: Meilenstein-Animation (einmal pro Abzeichen und Gerät), Hinweis bestätigen */
+/** Nach dem Rendern: Meilenstein-Animation (einmal pro Abzeichen und Gerät) */
 export function wireChallenge(root, st, ch) {
-  root.querySelector('#safety-ok')?.addEventListener('click', async e => {
-    try { await saveChallenge({ ...ch, safety_ack: true }); e.target.closest('.safety').remove(); } catch (ex) { toast(ex.message, 'error'); }
-  });
   for (const m of st.badges) {
     const key = `ms-${ch.start}-${m}`;
     let seen = true;

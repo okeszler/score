@@ -17,4 +17,4 @@ CREATE TABLE IF NOT EXISTS cravings (
 CREATE INDEX IF NOT EXISTS cravings_date ON cravings (entry_date);
 
 -- Challenge-Einstellungen liegen als JSON in app_settings, Schlüssel 'challenge':
--- { "start": "YYYY-MM-DD", "check": "YYYY-MM-DD", "safety_ack": true|false }
+-- { "start": "YYYY-MM-DD", "check": "YYYY-MM-DD" }

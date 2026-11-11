@@ -19,7 +19,7 @@ Wochenziel, Gewichtstrend und Health-Connect-Sync aus Google Drive.
 
 ## Alkohol-Pause-Challenge
 
-Start und Kontrolltermin in `app_settings` (Schlüssel `challenge`, JSON `{ start, check, safety_ack }`; Standard-Kontrolle 16.12.2026),
+Start und Kontrolltermin in `app_settings` (Schlüssel `challenge`, JSON `{ start, check }`; Standard-Kontrolle 16.12.2026),
 änderbar unter Einstellungen. Migration: `migrations/0002_challenge.sql` (`days.shots_count`, Tabelle `cravings`), wird auch zur Laufzeit angelegt.
 
 - **Score während der Challenge:** Bier-Budget 0; alkoholfreier Tag +2 Bonus (Summe max. 10); Tag mit Alkohol höchstens 6 (Orange).
@@ -41,7 +41,7 @@ Gewicht seit Start, Gamma-GT/GOT/GPT.
 - **Inhalte:** `content/info_tips.json`. Neue Einträge mit neuer `id` anhängen und `version` erhöhen – beim nächsten API-Aufruf
   werden sie übernommen (entfernte Einträge werden deaktiviert). `quelle` nur mit prüfbarer Angabe.
 - Regeln: keine erfundenen Zahlen/Studien, keine Diagnosen oder Medikamentenempfehlungen, ruhiger Ton; Test `test/info.test.js` prüft Pflichtfelder,
-  Satzzahl und den Entzugs-Hinweis (1450).
+  und die Satzzahl.
 
 ## Bestätigte Tage
 

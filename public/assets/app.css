@@ -637,9 +637,6 @@ table.cmp tr:last-child th, table.cmp tr:last-child td { border-bottom: 0; }
 @keyframes burst { to { transform: rotate(var(--a)) translateY(-38px) scale(.4); opacity: 0; } }
 .ms-feedback { margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--good-soft); font-size: .88rem; }
 .ms-feedback b { color: var(--good); }
-.safety { display: flex; gap: 10px; align-items: flex-start; margin: 14px 0 0; padding: 12px 14px; border-radius: var(--radius-sm);
-  background: var(--surface-2); font-size: .8rem; color: var(--ink-2); }
-.safety svg { width: 18px; height: 18px; flex: none; color: var(--accent); margin-top: 1px; }
 .ch-rules { margin: 14px 0 0; padding-left: 18px; font-size: .88rem; line-height: 1.7; }
 
 /* Triglycerid-Banner */
