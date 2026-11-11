@@ -15,6 +15,9 @@ export const DEFAULT_GOALS = {
 
 // 0,5 l Bier mit 5 % vol.: 500 ml * 0,05 * 0,789 g/ml
 export const BEER = { ml: 500, alcoholG: 19.7, kcal: 215 };
+// 2-cl-Stamperl (ca. 40 % vol.): zählt im Score als 0,33 Bier
+export const SHOT_BEER = 0.33;
+export const SHOT_KCAL = 50;
 // Grenzwert für einen "Risikotag" (g reiner Alkohol)
 export const RISK_DAY_G = 24;
 export const MIN_ALCOHOL_FREE_DAYS = 2;
@@ -102,6 +105,24 @@ export function effectiveFluid(day) {
   return (day.water_ml || 0) + beers * BEER_FLUID_ML;
 }
 
+/** Alkohol des Tages in Bier-Einheiten (Bier + Stamperl × 0,33) */
+export function alcoholUnits(day) {
+  if (!day) return 0;
+  return (day.beer_count || 0) + (day.shots_count || 0) * SHOT_BEER;
+}
+export const alcoholGrams = day => alcoholUnits(day) * BEER.alcoholG;
+
+// ---------- Alkohol-Pause-Challenge ----------
+export const CHALLENGE_DEFAULT_CHECK = '2026-12-16';
+export const MILESTONES = [3, 7, 14, 21, 28, 42];
+export const CHALLENGE_DAY_MAX = 6;   // Alkohol-Tag: höchstens Orange
+export const CHALLENGE_BONUS = 2;     // alkoholfreier Tag
+
+/** Liegt `date` in der Challenge (Start bis einschließlich Kontrolltermin)? */
+export function inChallenge(ch, date) {
+  return !!(ch && ch.start && date >= ch.start && (!ch.check || date <= ch.check));
+}
+
 export function effectiveProtein(day) {
   if (!day) return null;
   return day.protein_g ?? day.synced_protein ?? null;
@@ -137,7 +158,7 @@ export function withProvisionalDays(daysByDate, synced = {}, food = {}, today) {
   for (const d of dates) {
     if (out[d] || (today && d > today)) continue;
     out[d] = {
-      entry_date: d, provisional: true, created_at: null, beer_count: 0, gym_kraft: 0, gym_kardio: 0,
+      entry_date: d, provisional: true, created_at: null, beer_count: 0, shots_count: 0, gym_kraft: 0, gym_kardio: 0,
       steps: null, walk_km: null, calories_kcal: null, protein_g: null, water_ml: null,
       synced_steps: synced[d] ?? null, synced_kcal: food[d]?.kcal ?? null, synced_protein: food[d]?.protein ?? null,
     };
@@ -149,10 +170,12 @@ export function withProvisionalDays(daysByDate, synced = {}, food = {}, today) {
  * Tages-Score 0–10.
  *  Bewegung (max 4): Schritte vs. Ziel (3 Punkte) + Training (1 Punkt)
  *  Ernährung (max 3): kcal im Ziel, Protein erreicht, Wasser erreicht
- *  Alkohol (max 3): 0 Bier = 3, 1 = 2, 2 = 1, ab 3 = 0; Wochenbudget überschritten = 0
- * @param beersBefore Biere in derselben Woche VOR diesem Tag
+ *  Alkohol (max 3): 0 Bier = 3, bis 1 = 2, bis 2 = 1, darüber 0; Wochenbudget überschritten = 0
+ *    (Stamperl = 0,33 Bier)
+ *  Challenge: Wochenbudget 0, alkoholfreier Tag +2 Bonus (Summe max. 10), Alkohol-Tag max. 6 (Orange)
+ * @param beersBefore Bier-Einheiten in derselben Woche VOR diesem Tag
  */
-export function scoreDay(day, goals, beersBefore = 0) {
+export function scoreDay(day, goals, beersBefore = 0, { challenge = false } = {}) {
   if (!hasEntry(day)) return { total: null, status: 'none', parts: null, provisional: false };
   const g = mergeGoals(goals);
 
@@ -172,12 +195,15 @@ export function scoreDay(day, goals, beersBefore = 0) {
   const fluid = effectiveFluid(day);
   if (fluid != null && fluid >= g.water_target) ernaehrung += 1;
 
-  const beers = day.beer_count || 0;
-  let alkohol = [3, 2, 1][beers] ?? 0;
-  if (beers > 0 && beersBefore + beers > g.weekly_beer_budget) alkohol = 0;
+  const units = alcoholUnits(day);
+  const budget = challenge ? 0 : g.weekly_beer_budget;
+  let alkohol = units === 0 ? 3 : units <= 1 ? 2 : units <= 2 ? 1 : 0;
+  if (units > 0 && beersBefore + units > budget + 1e-9) alkohol = 0;
+  const bonus = challenge && units === 0 ? CHALLENGE_BONUS : 0;
 
-  const total = bewegung + ernaehrung + alkohol;
-  return { total, status: statusFor(total), parts: { bewegung, ernaehrung, alkohol }, steps, provisional: day.provisional === true };
+  let total = Math.min(10, bewegung + ernaehrung + alkohol + bonus);
+  if (challenge && units > 0) total = Math.min(total, CHALLENGE_DAY_MAX);
+  return { total, status: statusFor(total), parts: { bewegung, ernaehrung, alkohol, bonus }, steps, provisional: day.provisional === true, challenge, units };
 }
 
 export function statusFor(total) {
@@ -187,8 +213,8 @@ export function statusFor(total) {
   return 'red';
 }
 
-/** Scores für alle Tage berechnen; berücksichtigt das laufende Wochenbudget. */
-export function scoreAll(daysByDate, goals) {
+/** Scores für alle Tage berechnen; berücksichtigt das laufende Wochenbudget und die Challenge. */
+export function scoreAll(daysByDate, goals, challenge = null) {
   const dates = Object.keys(daysByDate).sort();
   const beersInWeek = {};
   const out = {};
@@ -196,18 +222,21 @@ export function scoreAll(daysByDate, goals) {
     const day = daysByDate[date];
     const wk = weekStart(date);
     const before = beersInWeek[wk] || 0;
-    out[date] = scoreDay(day, goals, before);
-    if (hasEntry(day)) beersInWeek[wk] = before + (day.beer_count || 0);
+    out[date] = scoreDay(day, goals, before, { challenge: inChallenge(challenge, date) });
+    if (hasEntry(day)) beersInWeek[wk] = before + alcoholUnits(day);
   }
   return out;
 }
 
 // ---------- Wochen ----------
 
-export function weekSummary(daysByDate, scores, goals, monday, today) {
+export function weekSummary(daysByDate, scores, goals, monday, today, challenge = null) {
   const g = mergeGoals(goals);
+  // Woche (teilweise) in der Challenge: Budget 0
+  const chWeek = [0, 1, 2, 3, 4, 5, 6].some(i => inChallenge(challenge, addDays(monday, i)));
+  const budget = chWeek ? 0 : g.weekly_beer_budget;
   const days = [];
-  let green = 0, greenProvisional = 0, confirmedN = 0, logged = 0, provisional = 0, beers = 0, alcoholFree = 0, riskDays = 0, trainings = 0;
+  let green = 0, greenProvisional = 0, confirmedN = 0, logged = 0, provisional = 0, beers = 0, beerCount = 0, shots = 0, alcoholFree = 0, riskDays = 0, trainings = 0;
   let stepsSum = 0, stepsN = 0, kcalSum = 0, kcalN = 0, waterSum = 0, waterN = 0, scoreSum = 0;
   for (let i = 0; i < 7; i++) {
     const date = addDays(monday, i);
@@ -221,8 +250,10 @@ export function weekSummary(daysByDate, scores, goals, monday, today) {
     else { confirmedN++; scoreSum += sc.total; } // Schnitt nur über bestätigte Tage
     if (confirmedGreen(sc)) green++;
     else if (sc.status === 'green') greenProvisional++;
-    const b = day.beer_count || 0;
+    const b = alcoholUnits(day);
     beers += b;
+    beerCount += day.beer_count || 0;
+    shots += day.shots_count || 0;
     if (b === 0 && !day.provisional) alcoholFree++; // unbestätigt zählt nicht als alkoholfrei
     if (b * BEER.alcoholG > RISK_DAY_G) riskDays++;
     if (day.gym_kraft || day.gym_kardio) trainings++;
@@ -234,7 +265,7 @@ export function weekSummary(daysByDate, scores, goals, monday, today) {
     if (fl != null) { waterSum += fl; waterN++; }
   }
   return {
-    monday, days, green, greenProvisional, confirmed: confirmedN, logged, provisional, beers, alcoholFree, riskDays, trainings,
+    monday, days, green, greenProvisional, confirmed: confirmedN, logged, provisional, beers: Math.round(beers * 100) / 100, beerCount, shots, alcoholFree, challenge: chWeek, riskDays, trainings,
     goalGreen: g.green_days_per_week,
     reached: green >= g.green_days_per_week,
     avgScore: confirmedN ? scoreSum / confirmedN : null,
@@ -242,9 +273,9 @@ export function weekSummary(daysByDate, scores, goals, monday, today) {
     avgKcal: kcalN ? Math.round(kcalSum / kcalN) : null,
     avgWater: waterN ? Math.round(waterSum / waterN) : null,
     alcoholG: beers * BEER.alcoholG,
-    alcoholBudgetG: g.weekly_beer_budget * BEER.alcoholG,
-    beerBudget: g.weekly_beer_budget,
-    beerLeft: g.weekly_beer_budget - beers,
+    alcoholBudgetG: budget * BEER.alcoholG,
+    beerBudget: budget,
+    beerLeft: Math.round((budget - beers) * 100) / 100,
   };
 }
 
@@ -259,13 +290,13 @@ export function activeStreak(scores, today) {
 }
 
 /** Wochen in Folge mit erreichtem Wochenziel (aktuelle Woche zählt nur, wenn schon erreicht). */
-export function weekStreak(daysByDate, scores, goals, today) {
+export function weekStreak(daysByDate, scores, goals, today, challenge = null) {
   let monday = weekStart(today);
-  const current = weekSummary(daysByDate, scores, goals, monday, today);
+  const current = weekSummary(daysByDate, scores, goals, monday, today, challenge);
   let n = current.reached ? 1 : 0;
   for (let i = 0; i < 520; i++) {
     monday = addDays(monday, -7);
-    if (!weekSummary(daysByDate, scores, goals, monday, today).reached) break;
+    if (!weekSummary(daysByDate, scores, goals, monday, today, challenge).reached) break;
     n++;
   }
   return n;
@@ -335,6 +366,68 @@ export function requiredDailyDeficit(currentKg, goalKg, today, targetDate) {
   return Math.round(((currentKg - goalKg) * KCAL_PER_KG_FAT) / days);
 }
 
+/** Bestätigter alkoholfreier Tag */
+export const isAlcoholFree = day => isConfirmed(day) && alcoholUnits(day) === 0;
+
+/**
+ * Stand der Challenge. Streak = bestätigte alkoholfreie Tage in Folge bis heute (heute zählt, sobald bestätigt;
+ * sonst bis gestern). Ein offener (unbestätigter) Tag unterbricht die Zählung, bis er nachgetragen ist.
+ * Ein Alkohol-Tag setzt den Streak auf 0, die Gesamtzahl alkoholfreier Tage der Challenge bleibt.
+ */
+export function challengeStats(daysByDate, ch, today) {
+  if (!ch?.start) return null;
+  const end = ch.check && ch.check < today ? ch.check : today;
+  let d = isConfirmed(daysByDate[today]) ? today : addDays(today, -1);
+  let streak = 0;
+  while (isAlcoholFree(daysByDate[d])) { streak++; d = addDays(d, -1); }
+  const blockedBy = isConfirmed(daysByDate[d]) ? 'alcohol' : 'open'; // was den Streak beendet
+  let free = 0, drinkDays = 0, open = 0, best = 0, run = 0;
+  for (let x = ch.start; x <= end; x = addDays(x, 1)) {
+    const day = daysByDate[x];
+    if (isAlcoholFree(day)) { free++; run++; best = Math.max(best, run); }
+    else { run = 0; if (isConfirmed(day)) drinkDays++; else if (x < today) open++; }
+  }
+  // Vergleich: Ø Alkohol pro bestätigtem Tag in den 4 Wochen vor dem Start
+  let before = 0, beforeN = 0;
+  for (let i = 1; i <= 28; i++) { const day = daysByDate[addDays(ch.start, -i)]; if (isConfirmed(day)) { before += alcoholUnits(day); beforeN++; } }
+  const perDay = beforeN ? before / beforeN : null;
+  const total = ch.check ? daysBetween(ch.start, ch.check) + 1 : null;
+  const elapsed = Math.max(0, daysBetween(ch.start, end) + 1);
+  return {
+    start: ch.start, check: ch.check, streak, best: Math.max(best, streak), free, drinkDays, open, blockedBy,
+    elapsed, total, daysToCheck: ch.check ? Math.max(0, daysBetween(today, ch.check)) : null,
+    progress: total ? Math.min(1, elapsed / total) : 0, ended: !!(ch.check && today > ch.check),
+    milestone: MILESTONES.includes(streak) ? streak : null,
+    nextMilestone: MILESTONES.find(m => m > streak) ?? null,
+    badges: MILESTONES.filter(m => m <= Math.max(best, streak)),
+    savedUnits: perDay != null ? Math.round(perDay * free * 10) / 10 : null, perDayBefore: perDay,
+  };
+}
+
+/** "Ich will etwas trinken": Auswirkungen von +1 Bier bzw. +1 Stamperl heute. */
+export function drinkDecision(daysByDate, goals, today, challenge = null, kind = 'beer') {
+  const g = mergeGoals(goals);
+  const ch = inChallenge(challenge, today);
+  const day = daysByDate[today] || { entry_date: today, beer_count: 0, shots_count: 0 };
+  const entry = { ...day, created_at: day.created_at || 'preview', provisional: false };
+  const monday = weekStart(today);
+  let before = 0;
+  for (let d = monday; d < today; d = addDays(d, 1)) if (hasEntry(daysByDate[d])) before += alcoholUnits(daysByDate[d]);
+  const add = kind === 'shot' ? { shots_count: (entry.shots_count || 0) + 1 } : { beer_count: (entry.beer_count || 0) + 1 };
+  const after = { ...entry, ...add };
+  const now = scoreDay(entry, g, before, { challenge: ch });
+  const next = scoreDay(after, g, before, { challenge: ch });
+  const stats = challenge ? challengeStats({ ...daysByDate, [today]: { ...entry, confirmed: 1 } }, challenge, today) : null;
+  const unitsAfter = alcoholUnits(after);
+  return {
+    kind, challenge: ch, streak: stats?.streak ?? null, streakAfter: 0,
+    scoreNow: now.total, scoreNext: next.total, statusNow: now.status, statusNext: next.status,
+    bonusLost: now.parts.bonus,
+    weekAfter: Math.round((before + unitsAfter) * 100) / 100, budget: ch ? 0 : g.weekly_beer_budget,
+    alcoholTodayG: unitsAfter * BEER.alcoholG, kcal: kind === 'shot' ? SHOT_KCAL : BEER.kcal,
+  };
+}
+
 /** "Noch ein Bier?" – Auswirkungen von +1 Bier heute. */
 export function beerDecision(daysByDate, goals, today) {
   const g = mergeGoals(goals);
@@ -342,7 +435,7 @@ export function beerDecision(daysByDate, goals, today) {
   const entry = hasEntry(day) ? day : { ...day, created_at: 'preview' };
   const monday = weekStart(today);
   let before = 0;
-  for (let d = monday; d < today; d = addDays(d, 1)) before += daysByDate[d]?.beer_count || 0;
+  for (let d = monday; d < today; d = addDays(d, 1)) before += alcoholUnits(daysByDate[d]);
   const todayBeers = entry.beer_count || 0;
   const now = scoreDay(entry, g, before);
   const next = scoreDay({ ...entry, beer_count: todayBeers + 1 }, g, before);
