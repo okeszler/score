@@ -4,13 +4,13 @@ import { readFileSync } from 'node:fs';
 import { createD1 } from './helpers/d1.js';
 import { ensureSchema, seedInfo } from '../lib/db.js';
 import { onRequestGet, onRequestPost } from '../functions/api/info.js';
-import { scoreDay } from '../public/assets/score.js';
+import { addDays, scoreDay } from '../public/assets/score.js';
 
 const SEED = JSON.parse(readFileSync(new URL('../content/info_tips.json', import.meta.url)));
 const get = (db, date, streak = 0) => onRequestGet({ env: { DB: db }, request: new Request(`https://s/api/info?date=${date}&streak=${streak}`) }).then(r => r.json());
 const post = (db, body) => onRequestPost({ env: { DB: db }, request: new Request('https://s/api/info', { method: 'POST', body: JSON.stringify(body) }) }).then(r => r.json());
 
-test('Seed-Datei: Pflichtfelder, eindeutige IDs, Kategorien, Sicherheits-Eintrag, keine erfundenen Quellen', () => {
+test('Seed-Datei: Pflichtfelder, eindeutige IDs, Kategorien, Pflicht-Themen, keine erfundenen Quellen', () => {
   const ids = new Set();
   const CATS = ['folgen', 'abstinenz', 'training', 'motivation', 'verlangen', 'alternativen', 'soziales'];
   for (const t of SEED.tips) {
@@ -21,7 +21,12 @@ test('Seed-Datei: Pflichtfelder, eindeutige IDs, Kategorien, Sicherheits-Eintrag
     assert.ok(sentences >= 2 && sentences <= 4, `${t.id}: ${sentences} Sätze`);
     assert.equal(t.quelle, null, `${t.id}: Quelle nur nach Prüfung eintragen`);
   }
-  assert.ok(SEED.tips.some(t => /1450/.test(t.kurz) && /Zittern|Schwitzen/.test(t.kurz)), 'Entzugs-Hinweis mit 1450 fehlt');
+  // Inhalte sollen ruhig und alltagsnah bleiben: keine Notrufnummern (Wunsch des Nutzers)
+  assert.ok(!SEED.tips.some(t => /\b(1450|144)\b/.test(`${t.kurz} ${t.lang ?? ''}`)), 'Notrufnummern bitte nicht in Infos');
+  // Pflicht-Themen vorhanden
+  for (const re of [/Triglycerid/, /Metformin/, /Testosteron/, /HALT/, /Nein danke/, /0,5 %/, /GGT|Gamma-GT/]) {
+    assert.ok(SEED.tips.some(t => re.test(`${t.titel} ${t.kurz} ${t.lang ?? ''}`)), `Thema fehlt: ${re}`);
+  }
 });
 
 test('Info des Tages: Streak-Tag hat Vorrang, sonst rotierend ohne Wiederholung; bei jedem Öffnen dieselbe', async () => {
@@ -37,13 +42,13 @@ test('Info des Tages: Streak-Tag hat Vorrang, sonst rotierend ohne Wiederholung;
   const seen = new Set();
   const rotating = SEED.tips.filter(t => t.streak_tag == null).length;
   for (let i = 0; i < rotating; i++) {
-    const r = await get(db, `2026-12-${String(i + 1).padStart(2, '0')}`, 0);
+    const r = await get(db, addDays('2026-12-01', i), 0);
     assert.equal(r.tip.streak_tag, null);
     assert.ok(!seen.has(r.tip.id), `Wiederholung ${r.tip.id}`);
     seen.add(r.tip.id);
   }
   // danach wieder von vorn: die am längsten nicht gezeigte
-  const again = await get(db, '2027-01-15', 0);
+  const again = await get(db, addDays('2026-12-01', rotating + 5), 0);
   assert.equal(again.tip.id, [...seen][0]);
 });
 

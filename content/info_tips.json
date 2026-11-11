@@ -1,14 +1,14 @@
 {
-  "version": 1,
+  "version": 2,
   "hinweis": "Inhalte für 'Info des Tages'. Regeln: keine erfundenen Zahlen, Studien oder Quellen; keine Diagnosen oder Medikamentenempfehlungen; ruhiger, sachlicher Ton. 'quelle' nur mit prüfbarer Angabe, sonst null. Neue Einträge mit neuer id anhängen und 'version' erhöhen.",
   "tips": [
     {
       "id": 1,
       "kategorie": "abstinenz",
       "streak_tag": 1,
-      "titel": "Die ersten Tage: auf den Körper achten",
-      "kurz": "Nach Wochen mit täglichem Alkohol kann der Körper in den ersten Tagen reagieren: Unruhe, Schwitzen, leichtes Zittern oder schlechter Schlaf. Das ist meist mild und klingt nach einigen Tagen ab. Bei starken Beschwerden ruf deinen Hausarzt oder 1450 an.",
-      "lang": "Der Körper hat sich an die tägliche Dosis gewöhnt und muss sich neu einpendeln. Viele merken davon wenig, manche spüren innere Unruhe, Schweißausbrüche, Herzklopfen oder schlafen ein paar Nächte schlecht. Hol dir sofort ärztliche Hilfe, wenn die Beschwerden stark werden – etwa deutliches Zittern, Verwirrtheit, Halluzinationen oder ein Krampfanfall. Dann gilt: 1450 oder im Notfall 144. Ärztlich begleitet aufzuhören ist kein Zeichen von Schwäche, sondern der sichere Weg.",
+      "titel": "Tag 1: Der Körper stellt sich um",
+      "kurz": "Nach Wochen mit täglichem Alkohol braucht der Körper ein paar Tage, um sich neu einzupendeln. Manche schlafen anfangs etwas unruhiger oder sind gereizter, viele merken kaum etwas. Beides ist normal – und es wird von Tag zu Tag leichter.",
+      "lang": "In den ersten Tagen lohnt sich ein ruhiger Rahmen: regelmäßig essen, viel Wasser, Bewegung an der frischen Luft und ein fester Schlafrhythmus. Wenn sich etwas ungewohnt anfühlt, ist der Hausarzt der richtige Ansprechpartner.",
       "quelle": null,
       "aktiv": 1
     },
@@ -199,6 +199,466 @@
       "titel": "Vier Wochen",
       "kurz": "Nach vier Wochen ohne Alkohol sind Veränderungen bei Triglyceriden und Leberwerten meist gut messbar. Jetzt ist ein guter Zeitpunkt für die Nüchternkontrolle beim Hausarzt. Was du dort siehst, hast du selbst bewirkt.",
       "lang": "Für die Kontrolle: am Morgen nüchtern zur Blutabnahme, also ohne Frühstück, nur Wasser. Trag die Ergebnisse danach unter Gesundheit › Blutwerte ein, dann erscheinen sie automatisch im Verlauf und unter „Meine Zahlen“.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 21,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Alkohol und Blutdruck",
+      "kurz": "Alkohol erhöht den Blutdruck, und zwar umso stärker, je mehr und je regelmäßiger getrunken wird. Wer weniger oder gar nicht trinkt, sieht oft schon nach einigen Wochen niedrigere Werte. Eine Messung vor und während der Pause zeigt dir den Unterschied.",
+      "lang": "Am aussagekräftigsten ist eine Messung morgens in Ruhe, vor dem Kaffee, im Sitzen nach ein paar Minuten Pause. Unter Gesundheit › Blutdruck kannst du die Werte eintragen und den Verlauf verfolgen.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 22,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Fettleber: still, aber rückbildungsfähig",
+      "kurz": "Bei regelmäßigem Alkohol und Übergewicht lagert die Leber Fett ein – meist ohne Beschwerden. Im frühen Stadium kann sich eine Fettleber gut zurückbilden. Alkohol-Pause, Gewichtsabnahme und Bewegung wirken dabei zusammen.",
+      "lang": "Die Leber hat eine bemerkenswerte Fähigkeit, sich zu erholen, wenn die Belastung wegfällt. Ob und wie stark Fett eingelagert ist, lässt sich mit Ultraschall und Blutwerten beurteilen – das ist eine Frage für deinen Hausarzt.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 23,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Stimmung und Antrieb",
+      "kurz": "Alkohol entspannt kurzfristig, am nächsten Tag folgen aber oft gedrückte Stimmung, Gereiztheit oder wenig Antrieb. Über Wochen ohne Alkohol wird die Stimmung bei vielen gleichmäßiger. Achte darauf, wie sich deine Nachmittage verändern.",
+      "lang": "Das Gehirn gleicht die dämpfende Wirkung von Alkohol aus. Ist der Alkohol abgebaut, bleibt diese Gegenreaktion eine Zeit lang bestehen – das fühlt sich als Unruhe oder Unlust an. Ohne den täglichen Wechsel pendelt sich das System wieder ein.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 24,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Brain Fog am Tag danach",
+      "kurz": "Auch ohne echten Kater sind Konzentration, Gedächtnis und Reaktionszeit am Tag nach Alkohol oft schlechter. Ein Teil davon kommt vom gestörten Schlaf. Viele beschreiben in der Pause einen klareren Kopf – besonders am Vormittag.",
+      "lang": "Du kannst das selbst beobachten: Wie leicht fallen dir Aufgaben im Büro, die Konzentration erfordern? Wie fühlen sich Besprechungen am Morgen an? Kleine Unterschiede werden über Wochen deutlich.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 25,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Warum der Hunger am Tag danach größer ist",
+      "kurz": "Nach Alkohol und einer unruhigen Nacht steigt bei vielen der Appetit auf Fettiges und Süßes. Schlafmangel verschiebt die Hormone, die Hunger und Sättigung steuern. Ohne Alkohol fällt es leichter, im Kalorienziel zu bleiben.",
+      "lang": "Das ist kein Mangel an Willenskraft, sondern Biologie. Wenn du merkst, dass der Hunger an bestimmten Tagen stärker ist, plane eine eiweißreiche Mahlzeit ein – sie sättigt länger.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 26,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Kalorien aus dem Glas summieren sich",
+      "kurz": "Drei Bier am Abend bringen rund 600 kcal – so viel wie eine ganze Mahlzeit, ohne satt zu machen. Über eine Woche wird daraus schnell der Unterschied zwischen Abnehmen und Stillstand. Unter „Meine Zahlen“ siehst du, was du schon eingespart hast.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 27,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Alkohol und Wasserhaushalt",
+      "kurz": "Alkohol bremst ein Hormon, das Wasser im Körper hält – deshalb muss man nach ein paar Gläsern öfter auf die Toilette. Durst, Kopfweh und trockener Mund am nächsten Morgen hängen damit zusammen. Ohne Alkohol bleibt der Wasserhaushalt stabiler, auch auf der Waage.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 28,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Triglyceride richtig messen",
+      "kurz": "Triglyceride schwanken stark mit der letzten Mahlzeit und dem Alkohol der Vortage. Für einen vergleichbaren Wert wird nüchtern gemessen, in der Regel nach einer Nacht ohne Essen. Trink vorher nur Wasser und lass Alkohol in den Tagen davor weg – während der Pause ohnehin erledigt.",
+      "lang": "Damit der Vergleich mit früheren Werten fair ist, sollten die Bedingungen möglichst gleich sein: ähnliche Uhrzeit, nüchtern, kein ungewöhnlich hartes Training am Vortag. Trag das Ergebnis danach unter Gesundheit › Blutwerte ein.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 29,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Cholesterin, HDL und Triglyceride",
+      "kurz": "Bei deinen Werten stehen die Triglyceride im Vordergrund, weil sie am schnellsten auf Alkohol reagieren. Gesamtcholesterin und HDL hängen stark von Ernährung, Gewicht und Bewegung ab. Regelmäßige Ausdauerbewegung kann das „gute“ HDL anheben – die Einordnung macht dein Hausarzt.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 30,
+      "kategorie": "abstinenz",
+      "streak_tag": 10,
+      "titel": "Zehn Tage",
+      "kurz": "Zehn Tage ohne Alkohol – das ist mehr als eine Ausnahme, das ist schon eine Phase. Die anfängliche Umstellung liegt hinter dir. Ab jetzt geht es darum, den neuen Abend zur Normalität zu machen.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 31,
+      "kategorie": "abstinenz",
+      "streak_tag": 21,
+      "titel": "Drei Wochen",
+      "kurz": "Drei Wochen: Bei vielen haben sich Schlaf und Tagesform jetzt spürbar verbessert. Der Griff zum Bier am Abend ist seltener ein Automatismus. Gleichzeitig ist das eine Phase, in der man leicht übermütig wird – „eins geht schon“.",
+      "lang": "Wenn dieser Gedanke kommt, hilft ein Blick auf die Gesamtzahl alkoholfreier Tage und den Kontrolltermin. Du entscheidest – aber am besten bewusst und nicht im Moment des Verlangens.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 32,
+      "kategorie": "abstinenz",
+      "streak_tag": 42,
+      "titel": "Sechs Wochen",
+      "kurz": "Sechs Wochen ohne Alkohol: Schlaf, Gewicht, Blutdruck und Laborwerte hatten Zeit, sich zu verändern. Das ist ein guter Moment, Bilanz zu ziehen – was ist besser geworden? Und wie möchtest du ab jetzt mit Alkohol umgehen?",
+      "lang": "Es gibt keinen richtigen oder falschen Weg nach einer Pause. Manche bleiben dabei, manche trinken bewusst selten. Wichtig ist, die Entscheidung mit den Zahlen der letzten Wochen im Kopf zu treffen.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 33,
+      "kategorie": "abstinenz",
+      "streak_tag": null,
+      "titel": "Was in den ersten Wochen typischerweise passiert",
+      "kurz": "In der ersten Woche stellt sich vor allem der Schlaf um, anfangs manchmal unruhiger. In Woche zwei bis vier berichten viele über mehr Energie, ruhigere Stimmung und eine stabilere Waage. Laborwerte wie Triglyceride und Leberwerte zeigen ihre Veränderung meist nach einigen Wochen.",
+      "lang": "Der Verlauf ist individuell – wie viel vorher getrunken wurde, wie man schläft, isst und sich bewegt, spielt alles mit. Deine eigenen Daten in der App zeigen dir, wie es bei dir aussieht.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 34,
+      "kategorie": "abstinenz",
+      "streak_tag": null,
+      "titel": "Wenn die ersten Nächte unruhig sind",
+      "kurz": "Manche schlafen ohne Alkohol anfangs schlechter ein oder wachen öfter auf. Das legt sich meist nach einigen Nächten. Ein fester Rhythmus, ein dunkles Schlafzimmer und eine Stunde ohne Bildschirm vor dem Schlafen helfen.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 35,
+      "kategorie": "abstinenz",
+      "streak_tag": null,
+      "titel": "Die Waage in der Pause",
+      "kurz": "Ohne Alkohol fallen Kalorien weg und der Wasserhaushalt wird ruhiger – beides zeigt sich auf der Waage. Einzelne Tage können trotzdem schwanken. Entscheidend ist der Trend über mehrere Wochen, nicht das Gewicht eines einzelnen Morgens.",
+      "lang": "Wiege dich am besten zwei- bis dreimal pro Woche morgens nach dem Aufstehen. Der Trend auf der Körper-Seite glättet Ausreißer und zeigt, wohin es geht.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 36,
+      "kategorie": "training",
+      "streak_tag": null,
+      "titel": "Testosteron und Alkohol",
+      "kurz": "Regelmäßiger und stärkerer Alkoholkonsum senkt bei Männern die körpereigene Testosteronbildung. Unter einer Testosteron-Therapie werden unter anderem das Blutbild und weitere Laborwerte regelmäßig kontrolliert – Alkohol verändert einige davon zusätzlich, etwa Leber- und Blutfettwerte. Die Pause macht die Kontrollen aussagekräftiger.",
+      "lang": "Alkohol wird in der Leber abgebaut, die auch Hormone verstoffwechselt, und er stört den Schlaf, in dem ein großer Teil der Hormonausschüttung stattfindet. Fragen zur Therapie, zu Dosis oder Kontrollen besprichst du mit deinem behandelnden Arzt – an der Medikation änderst du bitte nichts auf eigene Faust.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 37,
+      "kategorie": "training",
+      "streak_tag": null,
+      "titel": "Schlaf ist Training",
+      "kurz": "Ein großer Teil der Regeneration und der nächtlichen Hormonausschüttung passiert im Schlaf. Alkohol macht den Schlaf leichter und unruhiger – auch wenn man die Nacht „durchschläft“. Guter Schlaf ist deshalb einer der stärksten Hebel für Fortschritte im Gym.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 38,
+      "kategorie": "training",
+      "streak_tag": null,
+      "titel": "Regeneration nach dem Training",
+      "kurz": "Nach dem Training braucht der Körper Flüssigkeit, Kohlenhydrate zum Auffüllen der Speicher und Eiweiß für die Muskeln. Alkohol entzieht Wasser und stört das Auffüllen. Ein Glas Wasser und eine eiweißreiche Mahlzeit bringen dich weiter als ein Feierabendbier.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 39,
+      "kategorie": "training",
+      "streak_tag": null,
+      "titel": "Leistung am Tag nach Alkohol",
+      "kurz": "Am Tag nach Alkohol sind Ausdauer, Kraft und Koordination oft schlechter, der Puls ist bei gleicher Belastung höher. Das Training fühlt sich schwerer an, als es ist. Ohne Alkohol bringt jede Einheit mehr – und macht mehr Spaß.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 40,
+      "kategorie": "training",
+      "streak_tag": null,
+      "titel": "Training und Verletzungen",
+      "kurz": "Alkohol beeinträchtigt Koordination und Reaktion – auch noch am nächsten Tag. Bei schweren Gewichten oder schnellen Bewegungen steigt dadurch das Risiko für Fehler. Mit klarem Kopf trainierst du sauberer und sicherer.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 41,
+      "kategorie": "training",
+      "streak_tag": null,
+      "titel": "Eiweiß statt Bier nach dem Gym",
+      "kurz": "Nach dem Krafttraining ist die Muskulatur besonders aufnahmebereit für Eiweiß. Eine eiweißreiche Mahlzeit oder ein Shake nutzt dieses Fenster; Alkohol bremst dagegen den Muskelaufbau. Auch dein Proteinziel im Score profitiert davon.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 42,
+      "kategorie": "training",
+      "streak_tag": null,
+      "titel": "Bewegung senkt Triglyceride",
+      "kurz": "Regelmäßige Ausdauerbewegung hilft, Triglyceride zu senken – arbeitende Muskeln nutzen Fett aus dem Blut als Energie. Zusammen mit der Alkohol-Pause verstärken sich die Effekte. Auch zügiges Gehen zählt.",
+      "lang": "Es muss kein Marathon sein: Mehrmals pro Woche eine halbe Stunde, bei der du etwas schneller atmest, ist ein guter Anfang. Deine täglichen Schritte und Aktivitäten siehst du in der App.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 43,
+      "kategorie": "training",
+      "streak_tag": null,
+      "titel": "Alkohol bremst die Fettverbrennung beim Sport",
+      "kurz": "Solange Alkohol im Blut ist, baut der Körper zuerst ihn ab und verbrennt weniger Fett. Wer am Abend trinkt und am nächsten Morgen trainiert, holt also weniger aus der Einheit heraus. In der Pause arbeitet jede Bewegung voll für dein Gewichtsziel.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 44,
+      "kategorie": "training",
+      "streak_tag": null,
+      "titel": "Alltagsbewegung zählt",
+      "kurz": "Nicht nur das Gym bringt Fortschritt. Zehntausend Schritte mit den Kindern draußen, der Weg zu Fuß, die Treppe statt des Lifts – das summiert sich über die Woche. An Tagen ohne Training ist das deine Mindestroutine.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 45,
+      "kategorie": "training",
+      "streak_tag": null,
+      "titel": "Durst nach dem Sport",
+      "kurz": "Nach einem anstrengenden Training wirkt ein kaltes Bier besonders verlockend. Der Durst ist echt, aber Alkohol löscht ihn schlecht. Ein großes Glas Wasser, Saftschorle oder ein alkoholfreies Weizen stillen ihn besser.",
+      "lang": "Alkoholfreies Weizen wird gern als Sportgetränk bezeichnet, weil es Flüssigkeit und etwas Kohlenhydrate liefert. Es hat aber Kalorien – trag es für dein Kalorienziel in MyFitnessPal ein; in der App zählt es über „Alkoholfreies“ zum Trinkziel.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 46,
+      "kategorie": "verlangen",
+      "streak_tag": null,
+      "titel": "Bewegung gegen Verlangen",
+      "kurz": "Viele erleben, dass ein paar Minuten Bewegung das Verlangen deutlich dämpfen: ein schneller Spaziergang, ein paar Treppen, Liegestütze. Der Körper bekommt ein anderes Signal und die Welle verliert an Kraft. Probier es beim nächsten Mal mit dem Timer aus.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 47,
+      "kategorie": "motivation",
+      "streak_tag": null,
+      "titel": "Nie zweimal hintereinander",
+      "kurz": "Eine Serie ist ein starker Motor – jeder Tag macht den nächsten wertvoller. Wenn sie doch einmal reißt, gilt eine einfache Regel: nie zweimal hintereinander. Ein Tag ist ein Ausrutscher, zwei sind der Anfang eines neuen Musters.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 48,
+      "kategorie": "motivation",
+      "streak_tag": null,
+      "titel": "Der Kontrolltermin als Ziel",
+      "kurz": "Stell dir den Befund beim Hausarzt vor: Triglyceride deutlich niedriger als im November. Dieses Bild ist ein besseres Ziel als „kein Bier“. Du arbeitest nicht gegen etwas, sondern für ein Ergebnis.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 49,
+      "kategorie": "motivation",
+      "streak_tag": null,
+      "titel": "Deine Gründe",
+      "kurz": "Schreib dir in einem Satz auf, warum du die Pause machst – für die Gesundheit, für die Kinder, für dich. Wenn das Verlangen kommt, ist dieser Satz schneller zur Hand als jedes Argument. Gründe, die man selbst formuliert hat, wirken am stärksten.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 50,
+      "kategorie": "motivation",
+      "streak_tag": null,
+      "titel": "Was besser geworden ist",
+      "kurz": "Achte auf die kleinen Veränderungen: Wie fühlst du dich morgens? Wie ist der Schlaf, die Laune, die Konzentration? Wer Fortschritte bewusst wahrnimmt, bleibt leichter dran. Die App zeigt dir einen Teil davon schwarz auf weiß.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 51,
+      "kategorie": "motivation",
+      "streak_tag": null,
+      "titel": "Belohnung einplanen",
+      "kurz": "Ohne Getränke bleibt jede Woche Geld übrig. Leg es sichtbar zur Seite oder plane etwas Konkretes damit – ein neues Rolife-Modell, Trainingsausrüstung, ein Ausflug mit den Kindern. Eine greifbare Belohnung macht den Fortschritt spürbar.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 52,
+      "kategorie": "motivation",
+      "streak_tag": null,
+      "titel": "Wenn es zu leicht wird",
+      "kurz": "Nach einigen Wochen fühlt sich die Pause oft so leicht an, dass der Gedanke kommt: „Eins kann ich mir jetzt leisten.“ Genau dieser Moment entscheidet viel. Entscheide bewusst, nicht im Moment der Lust – und am besten erst nach dem Kontrolltermin.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 53,
+      "kategorie": "verlangen",
+      "streak_tag": null,
+      "titel": "Strategie bei Stress",
+      "kurz": "Nach einem stressigen Tag soll das Bier „runterbringen“. Langsames Ausatmen, ein paar Minuten an der frischen Luft oder Musik leisten oft dasselbe. Gib dem Stress einen anderen Ausgang, bevor du den Kühlschrank öffnest.",
+      "lang": "Eine einfache Atemübung: vier Sekunden einatmen, sechs bis acht Sekunden ausatmen, das Ganze einige Minuten lang. Lange Ausatmung signalisiert dem Körper Entspannung.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 54,
+      "kategorie": "verlangen",
+      "streak_tag": null,
+      "titel": "Strategie bei Hitze",
+      "kurz": "An heißen Tagen ist die Lust auf etwas Kaltes groß – und Bier ist der gewohnte Griff. Halte gekühlte Alternativen bereit: Soda mit Zitrone, ungesüßter Eistee, alkoholfreies Bier. Wer zuerst etwas Kaltes trinkt, hat den Durst oft schon gelöscht.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 55,
+      "kategorie": "verlangen",
+      "streak_tag": null,
+      "titel": "Strategie für den Abend",
+      "kurz": "Der Abend ist für viele die kritischste Zeit – das Ritual sitzt tief. Ein neuer Ablauf hilft: Abendessen nicht zu spät, danach etwas Aktives, ein warmes Getränk vor dem Schlafen. Je öfter du ihn wiederholst, desto selbstverständlicher wird er.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 56,
+      "kategorie": "verlangen",
+      "streak_tag": null,
+      "titel": "Strategie gegen Langeweile",
+      "kurz": "Langeweile ist ein häufiger Auslöser, weil das Glas „etwas zu tun“ gibt. Beschäftige die Hände: ein Rolife-Modell, ein Spiel mit den Kindern, ein kurzer Spaziergang. Oft ist das Verlangen nach zwanzig Minuten Beschäftigung verflogen.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 57,
+      "kategorie": "verlangen",
+      "streak_tag": null,
+      "titel": "Die Umgebung entscheidet mit",
+      "kurz": "Was im Kühlschrank steht, wird getrunken. Wenn kein Bier im Haus ist, wird aus spontaner Lust selten ein Getränk. Kleine Hürden wirken stärker als gute Vorsätze.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 58,
+      "kategorie": "verlangen",
+      "streak_tag": null,
+      "titel": "Den Film zu Ende denken",
+      "kurz": "Wenn die Lust kommt, denkt man an den ersten Schluck. Denk den Film weiter: das zweite und dritte Bier, den Schlaf, den Morgen danach, den Streak auf null. Mit dem ganzen Bild im Kopf fällt die Entscheidung oft anders aus.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 59,
+      "kategorie": "alternativen",
+      "streak_tag": null,
+      "titel": "Soda mit Zitrone",
+      "kurz": "Mineralwasser mit Zitrone oder Limette, ein paar Gurkenscheiben oder Minze – im schönen Glas mit Eis ist das mehr als „nur Wasser“. Es hat praktisch keine Kalorien und zählt voll zu deinem Trinkziel. Ein einfacher Feierabend-Ersatz.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 60,
+      "kategorie": "alternativen",
+      "streak_tag": null,
+      "titel": "Kombucha",
+      "kurz": "Kombucha ist fermentierter Tee, leicht säuerlich und prickelnd – ein Geschmack, der an „erwachsene“ Getränke erinnert. Durch die Gärung kann er Spuren von Alkohol enthalten, und manche Sorten sind ordentlich gezuckert. Ein Blick aufs Etikett lohnt sich.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 61,
+      "kategorie": "alternativen",
+      "streak_tag": null,
+      "titel": "Tee am Abend",
+      "kurz": "Ein warmer Tee am Abend ist ein ruhiges Ritual, besonders in der kalten Jahreszeit. Kräutertees wie Kamille, Melisse oder Rooibos sind koffeinfrei und stören den Schlaf nicht. Im Sommer schmeckt kalt aufgegossener Tee als Erfrischung.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 62,
+      "kategorie": "alternativen",
+      "streak_tag": null,
+      "titel": "Proteinshake als Feierabend-Ritual",
+      "kurz": "Nach dem Gym oder einem langen Tag kann ein Proteinshake die Rolle des Feierabendbiers übernehmen: ein fester Moment, ein Getränk in der Hand. Er hilft beim Muskelaufbau und beim Proteinziel. Und er macht satt statt hungrig.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 63,
+      "kategorie": "alternativen",
+      "streak_tag": null,
+      "titel": "Bitter und scharf",
+      "kurz": "Ein Teil des Biergeschmacks ist die Bitterkeit – die gibt es auch ohne Alkohol. Tonic Water (am besten zuckerfrei), Bitterlimonaden, Ingwer oder ein Spritzer Chili im Tomatensaft befriedigen den Wunsch nach einem herben, erwachsenen Geschmack.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 64,
+      "kategorie": "soziales",
+      "streak_tag": null,
+      "titel": "Beim Grillen und Feiern",
+      "kurz": "Nimm dir gleich zu Beginn ein Getränk ohne Alkohol – wer ein volles Glas hat, wird seltener gefragt. Bring dein Lieblings-Alkoholfreies einfach selbst mit. So bist du Teil der Runde, ohne zu erklären.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 65,
+      "kategorie": "soziales",
+      "streak_tag": null,
+      "titel": "Eine Person einweihen",
+      "kurz": "Es hilft, mindestens einer Person zu erzählen, dass du gerade eine Pause machst. Sie kann in Situationen unterstützen, in denen du sonst angeboten bekommst. Wer es weiß, fragt nicht nach – und freut sich oft mit.",
+      "lang": null,
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 66,
+      "kategorie": "soziales",
+      "streak_tag": null,
+      "titel": "Die Runde zahlen",
+      "kurz": "Wenn eine Runde ansteht, kannst du sie trotzdem zahlen – nur dein eigenes Getränk ist alkoholfrei. Das zeigt, dass du dabei bist. Niemand muss wissen, was in deinem Glas ist.",
+      "lang": null,
       "quelle": null,
       "aktiv": 1
     }
