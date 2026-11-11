@@ -106,6 +106,8 @@ export async function loadContext(daysBack = 120) {
   let daysByDate = {};
   for (const d of data.days) daysByDate[d.entry_date] = d;
   daysByDate = withProvisionalDays(daysByDate, data.synced, data.food || {}, t);
+  // "Info des Tages" gelesen -> +1 Bonuspunkt
+  for (const d of data.infoRead || []) if (daysByDate[d]) daysByDate[d] = { ...daysByDate[d], info_read: true };
   const challenge = data.challenge?.start ? data.challenge : null;
   const scores = scoreAll(daysByDate, goals, challenge);
   const weights = data.weights;

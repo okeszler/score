@@ -99,7 +99,7 @@ boot(async main => {
     const fd = new FormData(f);
     const n = k => (fd.get(k) === '' || fd.get(k) == null ? null : Number(fd.get(k)));
     return {
-      entry_date: date, created_at: 'preview',
+      entry_date: date, created_at: 'preview', info_read: !!day?.info_read,
       gym_kraft: fd.get('gym_kraft') ? 1 : 0, gym_kardio: fd.get('gym_kardio') ? 1 : 0,
       steps: n('steps'), walk_km: n('walk_km'), synced_steps: syncSteps,
       synced_kcal: mfp?.kcal ?? null, synced_protein: mfp?.protein ?? null,
@@ -114,7 +114,7 @@ boot(async main => {
     const s = scoreDay(read(), goals, beersBefore, { challenge: chDay });
     document.getElementById('pv').innerHTML = `${ring(s.total, s.status)}
       <div class="parts">
-        ${part('Bewegung', s.parts.bewegung, 4)}${part('Ernährung', s.parts.ernaehrung, 3)}${part('Alkohol', s.parts.alkohol, 3)}${s.challenge ? part('Bonus alkoholfrei', s.parts.bonus, 2) : ''}
+        ${part('Bewegung', s.parts.bewegung, 4)}${part('Ernährung', s.parts.ernaehrung, 3)}${part('Alkohol', s.parts.alkohol, 3)}${s.challenge ? part('Bonus alkoholfrei', s.parts.bonus, 2) : ''}${s.parts.info ? part('Info gelesen', s.parts.info, 1) : ''}
       </div>`;
     document.getElementById('pv-pill').innerHTML = `<span class="pill ${s.status}">${statusLabel(s.status)}</span>`;
     animateIn(() => document.querySelectorAll('#pv [data-w]').forEach(i => (i.style.width = `${i.dataset.w}%`)));

@@ -1,0 +1,206 @@
+{
+  "version": 1,
+  "hinweis": "Inhalte für 'Info des Tages'. Regeln: keine erfundenen Zahlen, Studien oder Quellen; keine Diagnosen oder Medikamentenempfehlungen; ruhiger, sachlicher Ton. 'quelle' nur mit prüfbarer Angabe, sonst null. Neue Einträge mit neuer id anhängen und 'version' erhöhen.",
+  "tips": [
+    {
+      "id": 1,
+      "kategorie": "abstinenz",
+      "streak_tag": 1,
+      "titel": "Die ersten Tage: auf den Körper achten",
+      "kurz": "Nach Wochen mit täglichem Alkohol kann der Körper in den ersten Tagen reagieren: Unruhe, Schwitzen, leichtes Zittern oder schlechter Schlaf. Das ist meist mild und klingt nach einigen Tagen ab. Bei starken Beschwerden ruf deinen Hausarzt oder 1450 an.",
+      "lang": "Der Körper hat sich an die tägliche Dosis gewöhnt und muss sich neu einpendeln. Viele merken davon wenig, manche spüren innere Unruhe, Schweißausbrüche, Herzklopfen oder schlafen ein paar Nächte schlecht. Hol dir sofort ärztliche Hilfe, wenn die Beschwerden stark werden – etwa deutliches Zittern, Verwirrtheit, Halluzinationen oder ein Krampfanfall. Dann gilt: 1450 oder im Notfall 144. Ärztlich begleitet aufzuhören ist kein Zeichen von Schwäche, sondern der sichere Weg.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 2,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Warum Alkohol die Triglyceride hochtreibt",
+      "kurz": "Solange Alkohol im Körper ist, baut die Leber ihn vorrangig ab. Dabei bildet sie vermehrt Fett und gibt es als Triglyceride ins Blut ab. Fällt der Alkohol weg, sinken die Werte meist schon innerhalb weniger Wochen spürbar.",
+      "lang": "Triglyceride gehören zu den Blutfetten, die am schnellsten auf den Lebensstil reagieren. Alkohol wirkt hier doppelt: Er liefert Energie, die die Leber in Fett umbaut, und er bremst den Abbau von Fett im Blut. Zucker und große, fettreiche Mahlzeiten verstärken den Effekt. Für einen aussagekräftigen Wert wird nüchtern gemessen – ohne Frühstück und am besten ohne Alkohol in den Tagen davor.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 3,
+      "kategorie": "verlangen",
+      "streak_tag": null,
+      "titel": "Verlangen kommt in Wellen",
+      "kurz": "Lust auf ein Getränk steigt an, erreicht einen Höhepunkt und flaut wieder ab – meist innerhalb von 10 bis 20 Minuten. Du musst die Welle nicht wegdrücken, nur durchstehen. Dafür gibt es den Timer unter „Ich habe Lust auf Alkohol“.",
+      "lang": "Dieses Prinzip heißt „Urge Surfing“: Statt gegen das Verlangen anzukämpfen, beobachtest du es wie eine Welle. Hilfreich sind dabei ein großes Glas Wasser, ein Ortswechsel, ein paar Minuten Bewegung oder ein kurzes Gespräch. Jede Welle, die du ausreiten lässt, macht die nächste ein bisschen schwächer.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 4,
+      "kategorie": "motivation",
+      "streak_tag": null,
+      "titel": "„Ich trinke nicht“ statt „Ich darf nicht“",
+      "kurz": "„Ich darf nicht“ klingt nach Verbot und lädt zum Verhandeln ein. „Ich trinke gerade nicht“ ist eine Entscheidung, die du getroffen hast. Diese kleine Änderung im Satz fühlt sich im Alltag oft deutlich leichter an.",
+      "lang": "Wie wir über uns selbst sprechen, prägt unser Verhalten. Wer sich als jemand sieht, der gerade eine Alkohol-Pause macht, muss nicht jeden Abend neu entscheiden. Probier es aus: im Kopf, beim Bestellen, im Gespräch mit Freunden.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 5,
+      "kategorie": "alternativen",
+      "streak_tag": null,
+      "titel": "Alkoholfreies Bier",
+      "kurz": "Alkoholfreies Bier schmeckt nach Feierabend, hat aber meist deutlich weniger Kalorien als normales Bier. Wichtig: „alkoholfrei“ darf bis zu 0,5 % Alkohol enthalten. Wer ganz sicher gehen will, greift zu Sorten mit 0,0 %.",
+      "lang": "Die Kalorien stammen bei alkoholfreiem Bier vor allem aus Malzzucker; je nach Sorte schwankt das deutlich, ein Blick aufs Etikett lohnt sich. Für viele ist nicht der Alkohol, sondern das Ritual entscheidend: das Zischen der Flasche, das kalte Glas, der Moment nach der Arbeit. Genau das bleibt erhalten.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 6,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Schneller eingeschlafen, schlechter geschlafen",
+      "kurz": "Alkohol macht müde und lässt viele schneller einschlafen. In der zweiten Nachthälfte wacht man dafür häufiger auf, und der erholsame Traumschlaf (REM) kommt insgesamt zu kurz. Ohne Alkohol sind die ersten Nächte manchmal unruhiger, danach wird der Schlaf meist tiefer und gleichmäßiger.",
+      "lang": "Wenn der Alkohol abgebaut ist, reagiert der Körper mit einer Art Gegenbewegung: Puls und Unruhe steigen, man wacht häufiger auf. Deine Uhr misst das mit. Unter Gesundheit › Schlaf siehst du in „Alkohol → Nacht“, wie sich Ruhepuls und Schlafphasen bei dir nach Tagen mit und ohne Alkohol unterscheiden.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 7,
+      "kategorie": "abstinenz",
+      "streak_tag": 3,
+      "titel": "Drei Tage",
+      "kurz": "Der Alkohol ist längst abgebaut, der Körper stellt sich um. Die ersten Tage sind oft die anstrengendsten: Der Abend fühlt sich leer an, der Schlaf ist noch unruhig. Das ist normal und vorübergehend.",
+      "lang": "Gewohnheiten hängen an Uhrzeiten und Orten. Wenn um 18 Uhr die Lust kommt, ist das kein Zeichen von Schwäche, sondern ein gelernter Ablauf. Plane für die nächsten Abende etwas Konkretes ein: einen Spaziergang, das Gym, eine Dusche, ein Hobby.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 8,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Alkohol und Gewicht",
+      "kurz": "Ein halber Liter Bier hat rund 200 kcal, ein Stamperl etwa 50. Dazu kommt: Solange Alkohol abgebaut wird, pausiert die Fettverbrennung weitgehend. Und Alkohol senkt die Hemmschwelle für Snacks.",
+      "lang": "Alkohol liefert mit 7 kcal pro Gramm fast so viel Energie wie Fett, macht aber kaum satt. Viele merken zusätzlich, dass sie am Abend nach ein paar Gläsern und am Tag danach mehr Hunger auf Salziges und Fettiges haben. Ohne Alkohol fällt beides weg – ein doppelter Vorteil für dein Gewichtsziel.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 9,
+      "kategorie": "verlangen",
+      "streak_tag": null,
+      "titel": "HALT: Was brauchst du gerade wirklich?",
+      "kurz": "Hinter Lust auf Alkohol steckt oft etwas anderes. HALT steht für Hunger, Ärger, Langeweile oder Alleinsein, Müdigkeit. Frag dich kurz, was davon zutrifft – und kümmere dich zuerst darum.",
+      "lang": "Hunger: etwas essen, gern mit Eiweiß. Ärger oder Stress: ein paar Minuten raus, durchatmen, Bewegung. Langeweile oder Alleinsein: jemanden anrufen, etwas mit den Händen tun. Müdigkeit: früher ins Bett statt „noch ein Bier zum Runterkommen“. Oft ist das Verlangen danach deutlich kleiner.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 10,
+      "kategorie": "soziales",
+      "streak_tag": null,
+      "titel": "„Nein danke“ reicht",
+      "kurz": "Du musst niemandem erklären, warum du nichts trinkst. Ein freundliches „Nein danke, heute nicht“ oder „Ich nehm ein Wasser“ genügt. Wer ein Glas in der Hand hat, wird seltener gefragt.",
+      "lang": "Hilfreich ist, die Antwort vorher parat zu haben, damit sie ganz beiläufig kommt. Wer nachhakt, bekommt eine kurze, ehrliche Antwort wie „Ich mach gerade eine Pause, tut mir gut“ – und dann ein Themenwechsel. Die meisten nehmen das schneller hin, als man denkt.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 11,
+      "kategorie": "abstinenz",
+      "streak_tag": 7,
+      "titel": "Eine Woche",
+      "kurz": "Bei vielen stabilisiert sich jetzt der Schlaf, der Ruhepuls sinkt und die Morgen werden klarer. Auch die Triglyceride beginnen bereits zu reagieren. Die erste Woche ist ein echter Meilenstein.",
+      "lang": "Wie schnell sich etwas verändert, ist von Mensch zu Mensch verschieden. Achte auf kleine Zeichen: Wie fühlst du dich beim Aufwachen? Wie ist die Konzentration am Nachmittag? Unter Gesundheit siehst du, wie sich Ruhepuls und Schlaf bei dir entwickeln.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 12,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Leberwert GGT",
+      "kurz": "Die Gamma-GT ist ein Leberenzym, das bei regelmäßigem Alkohol häufig ansteigt. Nach einer Pause sinkt sie meist über einige Wochen wieder. Deine Werte findest du unter „Meine Zahlen“.",
+      "lang": "Die GGT ist kein reiner Alkoholwert – auch Übergewicht, eine Fettleber oder manche Medikamente können sie erhöhen. Gerade deshalb ist der Verlauf über die Zeit aussagekräftiger als ein einzelner Wert. Wie deine Werte einzuordnen sind, besprichst du am besten mit deinem Hausarzt.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 13,
+      "kategorie": "motivation",
+      "streak_tag": null,
+      "titel": "Ein Rückfall ist ein Datenpunkt",
+      "kurz": "Wenn du doch getrunken hast, ist die Challenge nicht vorbei. Deine bisherigen alkoholfreien Tage bleiben, nur der Streak beginnt neu. Wichtiger als der Ausrutscher ist die Frage: Was war der Auslöser?",
+      "lang": "Notiere dir Situation, Uhrzeit und Stimmung – die App sammelt Auslöser bei „Ich habe Lust auf Alkohol“. Daraus entstehen Muster: bestimmte Wochentage, Stress im Büro, heiße Abende. Für genau diese Situationen kannst du dir einen Plan B zurechtlegen.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 14,
+      "kategorie": "alternativen",
+      "streak_tag": null,
+      "titel": "Ein Ritual statt eines Biers",
+      "kurz": "Oft geht es beim Feierabendbier um den Übergang: Arbeit aus, Freizeit an. Dieses Signal kann auch etwas anderes sein. Eine Runde um den See, eine heiße Dusche, das Gym oder eine Stunde an einem Rolife-Modell.",
+      "lang": "Ein gutes Ritual ist einfach, immer gleich und markiert klar das Ende des Arbeitstags. Je öfter du es wiederholst, desto mehr übernimmt es die Rolle, die vorher das Bier hatte. Mit den Kindern draußen zu sein ist dabei doppelt gut: Bewegung und eine Zeit, in der Alkohol ohnehin keine Rolle spielt.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 15,
+      "kategorie": "training",
+      "streak_tag": null,
+      "titel": "Alkohol und Muskelaufbau",
+      "kurz": "Nach dem Training baut der Körper Muskeleiweiß auf. Größere Mengen Alkohol bremsen diesen Prozess und verschlechtern zusätzlich den Schlaf, in dem viel Regeneration passiert. Ohne Alkohol bringt jede Einheit im Gym mehr.",
+      "lang": "Regeneration braucht drei Dinge: ausreichend Eiweiß, genug Flüssigkeit und guten Schlaf. Alkohol stört bei allen dreien. Wer in der Pause trainiert, merkt den Unterschied oft daran, dass Muskelkater schneller abklingt und das nächste Training leichter fällt.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 16,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Sehr hohe Triglyceride und die Bauchspeicheldrüse",
+      "kurz": "Sehr hohe Triglyceride können die Bauchspeicheldrüse belasten; das Risiko einer Entzündung steigt vor allem bei Werten um 1000 mg/dl und darüber. Alkohol ist ein zusätzlicher, eigenständiger Risikofaktor. Starke, gürtelförmige Oberbauchschmerzen gehören sofort ärztlich abgeklärt.",
+      "lang": "Das ist kein Grund zur Panik, aber ein guter Grund, den Wert ernst zu nehmen und ihn kontrollieren zu lassen. Die Alkohol-Pause senkt beide Risiken gleichzeitig: die Triglyceride und die direkte Belastung durch Alkohol. Wie oft kontrolliert werden soll, entscheidet dein Hausarzt.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 17,
+      "kategorie": "abstinenz",
+      "streak_tag": 14,
+      "titel": "Zwei Wochen",
+      "kurz": "Viele berichten jetzt über mehr Energie und eine ruhigere Stimmung. Auch der Blutdruck kann sinken, denn Alkohol erhöht ihn abhängig von der Menge. Halbzeit bis zu einer aussagekräftigen Kontrolle.",
+      "lang": "Auf der Waage zeigen sich zwei Effekte: weniger Kalorien und weniger Schwankungen durch Wassereinlagerungen. Wenn du ein Blutdruckmessgerät hast, lohnt sich jetzt eine Messung zum Vergleich – unter Gesundheit › Blutdruck kannst du sie eintragen.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 18,
+      "kategorie": "folgen",
+      "streak_tag": null,
+      "titel": "Alkohol und Metformin",
+      "kurz": "Wer Metformin einnimmt, sollte mit Alkohol vorsichtig sein: Größere Mengen erhöhen das Risiko einer seltenen, aber ernsten Übersäuerung des Blutes (Laktatazidose), besonders nüchtern oder bei wenig Essen. Die Pause nimmt dieses Risiko heraus. Fragen zur Einnahme gehören zum Hausarzt.",
+      "lang": "Auch die Packungsbeilage rät, während der Behandlung übermäßigen Alkoholkonsum zu vermeiden. An der Medikation selbst änderst du bitte nichts ohne Rücksprache mit deinem Arzt.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 19,
+      "kategorie": "motivation",
+      "streak_tag": null,
+      "titel": "Was du schon geschafft hast",
+      "kurz": "Menschen schützen Erreichtes stärker, als sie Neues anstreben. Nutze das: Jeder alkoholfreie Tag ist etwas, das du bereits hast. Die Gesamtzahl auf der Startseite gehört dir – egal, was morgen passiert.",
+      "lang": "Der Streak ist ein guter Motor, solange er läuft. Die Gesamtzahl alkoholfreier Tage ist das ehrlichere Maß, weil sie nach einem Ausrutscher nicht verschwindet. Beides zusammen hält dich auf Kurs: der Streak für den Moment, die Summe für das große Bild.",
+      "quelle": null,
+      "aktiv": 1
+    },
+    {
+      "id": 20,
+      "kategorie": "abstinenz",
+      "streak_tag": 28,
+      "titel": "Vier Wochen",
+      "kurz": "Nach vier Wochen ohne Alkohol sind Veränderungen bei Triglyceriden und Leberwerten meist gut messbar. Jetzt ist ein guter Zeitpunkt für die Nüchternkontrolle beim Hausarzt. Was du dort siehst, hast du selbst bewirkt.",
+      "lang": "Für die Kontrolle: am Morgen nüchtern zur Blutabnahme, also ohne Frühstück, nur Wasser. Trag die Ergebnisse danach unter Gesundheit › Blutwerte ein, dann erscheinen sie automatisch im Verlauf und unter „Meine Zahlen“.",
+      "quelle": null,
+      "aktiv": 1
+    }
+  ]
+}

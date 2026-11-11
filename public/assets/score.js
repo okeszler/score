@@ -14,7 +14,7 @@ export const DEFAULT_GOALS = {
 };
 
 // 0,5 l Bier mit 5 % vol.: 500 ml * 0,05 * 0,789 g/ml
-export const BEER = { ml: 500, alcoholG: 19.7, kcal: 215 };
+export const BEER = { ml: 500, alcoholG: 19.7, kcal: 200 }; // kcal: Näherungswert
 // 2-cl-Stamperl (ca. 40 % vol.): zählt im Score als 0,33 Bier
 export const SHOT_BEER = 0.33;
 export const SHOT_KCAL = 50;
@@ -117,6 +117,7 @@ export const CHALLENGE_DEFAULT_CHECK = '2026-12-16';
 export const MILESTONES = [3, 7, 14, 21, 28, 42];
 export const CHALLENGE_DAY_MAX = 6;   // Alkohol-Tag: höchstens Orange
 export const CHALLENGE_BONUS = 2;     // alkoholfreier Tag
+export const INFO_BONUS = 1;          // "Info des Tages" gelesen
 
 /** Liegt `date` in der Challenge (Start bis einschließlich Kontrolltermin)? */
 export function inChallenge(ch, date) {
@@ -201,9 +202,10 @@ export function scoreDay(day, goals, beersBefore = 0, { challenge = false } = {}
   if (units > 0 && beersBefore + units > budget + 1e-9) alkohol = 0;
   const bonus = challenge && units === 0 ? CHALLENGE_BONUS : 0;
 
-  let total = Math.min(10, bewegung + ernaehrung + alkohol + bonus);
+  const info = day.info_read ? INFO_BONUS : 0;
+  let total = Math.min(10, bewegung + ernaehrung + alkohol + bonus + info);
   if (challenge && units > 0) total = Math.min(total, CHALLENGE_DAY_MAX);
-  return { total, status: statusFor(total), parts: { bewegung, ernaehrung, alkohol, bonus }, steps, provisional: day.provisional === true, challenge, units };
+  return { total, status: statusFor(total), parts: { bewegung, ernaehrung, alkohol, bonus, info }, steps, provisional: day.provisional === true, challenge, units };
 }
 
 export function statusFor(total) {

@@ -30,6 +30,19 @@ Start und Kontrolltermin in `app_settings` (Schlüssel `challenge`, JSON `{ star
   während der Challenge diesen Rechner statt direkt einzutragen.
 - **„Ich habe Lust auf Alkohol“:** 10-Minuten-Timer, Glas Wasser, Stärke und Auslöser (`/api/cravings`); Auswertung auf der Wochenseite.
 
+## Info des Tages
+
+Karte unter dem Alkohol-Zähler: ein kurzer, sachlicher Impuls pro Tag (bei jedem Öffnen derselbe), „Mehr lesen“, „Gelesen“ (+1 Punkt
+im Tagesscore, einmal pro Tag, Summe max. 10) und „Noch eine Info“. Auswahl: Eintrag zum aktuellen Streak-Tag hat Vorrang (`streak_tag`),
+sonst rotierend ohne Wiederholung, bis alle durch sind. Reiter „Meine Zahlen“: Triglyceride, Alkohol-Pause (weggelassene Getränke, kcal),
+Gewicht seit Start, Gamma-GT/GOT/GPT.
+
+- Tabellen `info_tips`, `info_reads` (`migrations/0003_info.sql`, auch zur Laufzeit angelegt).
+- **Inhalte:** `content/info_tips.json`. Neue Einträge mit neuer `id` anhängen und `version` erhöhen – beim nächsten API-Aufruf
+  werden sie übernommen (entfernte Einträge werden deaktiviert). `quelle` nur mit prüfbarer Angabe.
+- Regeln: keine erfundenen Zahlen/Studien, keine Diagnosen oder Medikamentenempfehlungen, ruhiger Ton; Test `test/info.test.js` prüft Pflichtfelder,
+  Satzzahl und den Entzugs-Hinweis (1450).
+
 ## Bestätigte Tage
 
 Ein Tag ist **bestätigt**, sobald er gespeichert, Bier eingetragen oder „Passt so ✓“ getippt wurde (`days.confirmed`).
