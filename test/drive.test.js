@@ -7,6 +7,20 @@ test('Schritte-CSV (Health Connect, deutsch)', () => {
   assert.deepEqual(parseStepsCsv(csv), { '2026-10-07': 23, '2026-10-08': 5 });
 });
 
+test('Schritte: Uhr (Minutenwerte) und Handy nicht doppelt zählen', () => {
+  // Muster aus dem echten Export vom 10.11.2026 (Samsung Health zeigte 8.071, einfache Summe 11.812)
+  const csv = 'Datum,Zeit,Schritte\n'
+    + '2026.11.10 08:25:00,08:25:00,86\n'    // Uhr
+    + '2026.11.10 08:25:04,08:25:04,7\n'     // Handy, überschneidet sich
+    + '2026.11.10 08:25:18,08:25:18,335\n'   // Handy
+    + '2026.11.10 08:26:00,08:26:00,103\n'   // Uhr
+    + '2026.11.10 12:57:00,12:57:00,57\n'    // gleiche Minute doppelt -> größerer Wert
+    + '2026.11.10 12:57:00,12:57:00,15\n'
+    + '2026.11.10 21:09:12,21:09:12,40\n'    // Stunde ohne Minutenwerte (Uhr abgelegt) -> Handy zählt
+    + '2026.11.10 21:30:44,21:30:44,25\n';
+  assert.deepEqual(parseStepsCsv(csv), { '2026-11-10': 86 + 103 + 57 + 40 + 25 });
+});
+
 test('Gewicht-CSV mit Körperfett und gequoteten Werten', () => {
   const csv = 'Datum,Zeit,Gewicht,Körperfettanteil,Körperfettmasse\n'
     + '2026.08.08 16:52:14,16:52:14,"94.0","0.0","0.0"\n'

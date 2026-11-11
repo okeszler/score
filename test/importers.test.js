@@ -94,3 +94,19 @@ test('Ernährung: Tagesexport mit nachgetragener Mahlzeit, kurz danach 30-Tage-E
   const r = await db.prepare('SELECT kcal, protein_g FROM sync_nutrition_daily').first();
   assert.deepEqual([r.kcal, r.protein_g], [2384, 118]);
 });
+
+test('Schritte: neuester Export gewinnt – auch nach unten; ältere überschreiben nichts', async () => {
+  const db = await setup();
+  const csv = n => `Datum,Zeit,Schritte\n2026.11.10 08:00:00,08:00:00,${n}\n`;
+  // Altbestand aus der früheren Regel (ohne Zeitstempel, doppelt gezählt)
+  await db.prepare(`INSERT INTO sync_steps_daily (entry_date, steps) VALUES ('2026-11-10', 11812)`).run();
+  assert.equal((await run(db, 'schritte', csv(8071), 'a.csv', '2026-11-11T09:15:37Z')).written, 1);
+  assert.equal((await db.prepare('SELECT steps FROM sync_steps_daily').first()).steps, 8071);
+  // später verarbeiteter, aber älterer Export: keine Änderung
+  assert.equal((await run(db, 'schritte', csv(5000), 'old.csv', '2026-11-10T20:00:00Z')).written, 0);
+  // gleicher Export noch einmal: kein Schreibvorgang
+  assert.equal((await run(db, 'schritte', csv(8071), 'a.csv', '2026-11-11T09:15:37Z')).written, 0);
+  // neuerer Export mit mehr Schritten (Tag läuft noch)
+  assert.equal((await run(db, 'schritte', csv(9000), 'b.csv', '2026-11-11T12:00:00Z')).written, 1);
+  assert.equal((await db.prepare('SELECT steps FROM sync_steps_daily').first()).steps, 9000);
+});
