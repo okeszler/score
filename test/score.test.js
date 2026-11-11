@@ -52,8 +52,10 @@ test('Wochenbudget überschritten -> Alkohol 0', () => {
   assert.equal(scoreDay(day('d', { beer_count: 0 }), goals, 9).parts.alkohol, 3);
 });
 
-test('Effektive Schritte: manuell > Sync > Walk', () => {
-  assert.equal(effectiveSteps({ steps: 5000, synced_steps: 9000 }), 5000);
+test('Effektive Schritte: höherer Wert aus Hand und Sync > Walk', () => {
+  assert.equal(effectiveSteps({ steps: 5000, synced_steps: 9000 }), 9000);
+  assert.equal(effectiveSteps({ steps: 12000, synced_steps: 9000 }), 12000);
+  assert.equal(effectiveSteps({ steps: 8000, synced_steps: null, walk_km: 9 }), 8000);
   assert.equal(effectiveSteps({ steps: null, synced_steps: 9000 }), 9000);
   assert.equal(effectiveSteps({ steps: null, synced_steps: null, walk_km: 2 }), 2600);
 });
@@ -125,4 +127,47 @@ test('Aktiv-Streak: ein laufender, noch nicht grüner Tag unterbricht die Serie 
   assert.equal(activeStreak(s, '2026-11-10'), 4);
   s['2026-11-09'] = { status: 'orange' };
   assert.equal(activeStreak(s, '2026-11-10'), 1);
+});
+
+test('Nur bestätigte Tage zählen: Wasser-Zeile vorläufig, grün nur bestätigt, Schnitt ohne vorläufige', async () => {
+  const { withProvisionalDays, scoreAll, weekSummary, activeStreak, isConfirmed } = await import('../public/assets/score.js');
+  const g = { steps_target: 10000, kcal_target: 2000, protein_target: 140, water_target: 2000 };
+  const green = (d, extra = {}) => ({ entry_date: d, created_at: 'x', confirmed: 1, beer_count: 0, steps: 12000, calories_kcal: 1800, protein_g: 150, water_ml: 2000, ...extra });
+  let days = {
+    '2026-11-09': green('2026-11-09'),
+    // nur Wasser getippt -> vorläufig, nicht alkoholfrei, nicht grün fürs Wochenziel
+    '2026-11-10': green('2026-11-10', { confirmed: 0, steps: null, synced_steps: 12000, calories_kcal: null, synced_kcal: 1800, protein_g: null, synced_protein: 150 }),
+  };
+  days = withProvisionalDays(days, { '2026-11-11': 12000 }, { '2026-11-11': { kcal: 1800, protein: 150 } }, '2026-11-11');
+  assert.equal(isConfirmed(days['2026-11-10']), false);
+  const sc = scoreAll(days, g);
+  assert.equal(sc['2026-11-10'].status, 'green');
+  assert.equal(sc['2026-11-10'].provisional, true);
+  const w = weekSummary(days, sc, g, '2026-11-09', '2026-11-11');
+  assert.equal(w.green, 1);
+  assert.equal(w.greenProvisional, 2);
+  assert.equal(w.alcoholFree, 1);
+  assert.equal(w.confirmed, 1);
+  assert.equal(w.avgScore, sc['2026-11-09'].total);
+  assert.equal(activeStreak(sc, '2026-11-11'), 0); // gestern nur vorläufig grün
+});
+
+test('Kalorienziel-Check: Schätzung, Abgleich mit Waage, nie unter Grundumsatz', async () => {
+  const { calorieCheck, addDays } = await import('../public/assets/score.js');
+  const today = '2026-11-11';
+  const days = {};
+  for (let i = 1; i <= 28; i++) days[addDays(today, -i)] = { entry_date: addDays(today, -i), created_at: 'x', steps: 10000, calories_kcal: i <= 20 ? 2000 : null };
+  // Waage: 0,5 kg/Woche runter
+  const weights = [0, 7, 14, 21, 28, 35].map(d => ({ entry_date: addDays(today, -d), weight_kg: 94 + d / 14 }));
+  const c = calorieCheck({ weights, daysByDate: days, goals: { kcal_target: 2000 }, today, bmr: 1926 });
+  assert.equal(c.need, 2700);            // 1926 × 1,15 + 10.000 × 0,05 = 2715 → 2700
+  assert.equal(c.kcalDays, 20);
+  assert.equal(c.enough, true);
+  assert.equal(c.realNeed, 2550);        // 2000 gegessen + 550 Defizit laut Waage
+  assert.equal(c.suggest, 2000);
+  // kaum Daten -> nur Schätzung, Vorschlag nicht unter Grundumsatz
+  const few = calorieCheck({ weights: weights.slice(0, 2), daysByDate: {}, goals: { kcal_target: 1500 }, today, bmr: 1926 });
+  assert.equal(few.enough, false);
+  assert.equal(few.suggest, 1950);
+  assert.equal(calorieCheck({ weights, daysByDate: days, goals: {}, today, bmr: null }), null);
 });

@@ -23,7 +23,9 @@ boot(async main => {
       ${future ? 'tabindex="-1"' : `href="/eintrag?date=${d}"`} title="${title}" aria-label="${title}" style="animation-delay:${i * 6}ms"></a>`);
   }
   const counted = Object.entries(scores).filter(([d, s]) => d >= firstMonday && s.status !== 'none');
-  const cnt = st => counted.filter(([, s]) => s.status === st).length;
+  const confirmed = counted.filter(([, s]) => !s.provisional);
+  const openN = counted.length - confirmed.length;
+  const cnt = st => confirmed.filter(([, s]) => s.status === st).length;
 
   // ---- Wochen ----
   const weeks = [];
@@ -46,12 +48,12 @@ boot(async main => {
   }
   const avg = (arr, k) => { const v = arr.map(x => x[k]).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   const rate = arr => (arr.length ? (arr.filter(x => x.tracked).length / arr.length) * 100 : null);
-  const budgetWeeks = weeks.filter(x => x.w.logged > 0);
+  const budgetWeeks = weeks.filter(x => x.w.confirmed > 0);
   const budgetOk = budgetWeeks.filter(x => x.w.beers <= x.w.beerBudget).length;
 
   main.innerHTML = `
   <section class="card" data-reveal>
-    <div class="card-title">Letzte ${WEEKS} Wochen <span class="muted" style="text-transform:none;letter-spacing:0">${counted.length} Tage eingetragen</span></div>
+    <div class="card-title">Letzte ${WEEKS} Wochen <span class="muted" style="text-transform:none;letter-spacing:0">${confirmed.length} bestätigt${openN ? ` · ${openN} offen` : ''}</span></div>
     <div class="heat">
       <div class="heat-days">${['Mo', '', 'Mi', '', 'Fr', '', 'So'].map(x => `<span>${x}</span>`).join('')}</div>
       <div class="heat-grid">${cells.join('')}</div>
@@ -60,8 +62,8 @@ boot(async main => {
       <span><i class="st-green"></i>Grün (${cnt('green')})</span>
       <span><i class="st-orange"></i>Orange (${cnt('orange')})</span>
       <span><i class="st-red"></i>Rot (${cnt('red')})</span>
-      <span><i class="st-green" style="opacity:.45;outline:1.5px dashed var(--ink-2);outline-offset:-1.5px"></i>Vorläufig</span>
-      <span><i style="background:var(--surface-2);outline:1px dashed var(--line)"></i>Kein Eintrag</span>
+      <span><i class="heat-swatch-open"></i>Offen (${openN}) – Bier unbestätigt</span>
+      <span><i class="heat-swatch-empty"></i>Keine Daten</span>
     </div>
   </section>
 
@@ -92,8 +94,8 @@ boot(async main => {
   const label = mon => parseDate(mon).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
   barChart(document.getElementById('ch-score'), {
     bars: weeks.map(({ mon, w }) => ({
-      label: label(mon), value: w.avgScore, status: statusFor(w.avgScore == null ? null : Math.round(w.avgScore)),
-      tip: `<span>KW ab ${label(mon)}</span><br><b>Ø ${fmt(w.avgScore, 1)}</b> · ${w.green}/${w.goalGreen} grün · ${w.beers} Bier`,
+      label: label(mon), value: w.avgScore, status: statusFor(w.avgScore),
+      tip: `<span>KW ab ${label(mon)}</span><br>${w.avgScore == null ? '<b>keine bestätigten Tage</b>' : `<b>Ø ${fmt(w.avgScore, 1)}</b> · ${w.green}/${w.goalGreen} grün · ${w.beers} Bier`}`,
     })),
     max: 10, goal: 7, height: 200, label: 'Durchschnittlicher Score je Woche',
   });

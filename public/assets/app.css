@@ -335,7 +335,7 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .list-item .meta b { font-weight: 500; display: block; }
 .list-item .meta span { font-size: 0.82rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .list-item .actions { display: flex; gap: 2px; }
-.list-item .actions button { border: 0; background: none; padding: 8px; border-radius: 8px; color: var(--muted); cursor: pointer; }
+.list-item .actions button, .list-item .actions a { border: 0; background: none; padding: 11px; border-radius: 10px; color: var(--muted); cursor: pointer; min-width: 40px; min-height: 40px; display: grid; place-items: center; }
 .list-item .actions button:hover { background: var(--surface-2); color: var(--ink); }
 .list-item .actions button.del:hover { color: var(--bad); }
 .list-item .actions svg { width: 18px; height: 18px; display: block; }
@@ -360,7 +360,10 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .chart .grid-line { stroke: var(--line); stroke-width: 1; }
 .chart .axis-label { fill: var(--muted); font-size: 11px; font-family: inherit; }
 .chart .goal-line { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 5; }
-.chart .goal-label { fill: var(--muted); font-size: 11px; }
+.chart .goal-label { fill: var(--muted); font-size: 11px; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.tile-viz .mini-gap { fill: var(--line); }
+.tile-viz .mini-goal { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 3; opacity: .6; }
+.tile-viz .mini-bar { transform-box: fill-box; transform-origin: bottom; animation: grow .6s var(--ease) both; }
 .chart .series-line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .chart .draw { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw 1.4s var(--ease) forwards; }
 .chart .fade { opacity: 0; animation: fadein 0.9s 0.3s var(--ease) forwards; }
@@ -510,16 +513,45 @@ details > summary::-webkit-details-marker { display: none; }
 .lab-cell b { font-weight: 500; }
 .list.wrap .meta span { white-space: normal; }
 /* Vorläufige Tage (aus importierten Daten, Bier unbestätigt) */
-.heat-cell.prov { opacity: .45; outline: 1.5px dashed var(--ink-2); outline-offset: -1.5px; animation-name: pop-prov; }
+.heat-cell.prov { background: var(--surface-2); outline: 2px dashed var(--st); outline-offset: -2px; }
+.legend i.heat-swatch-open { background: var(--surface-2); outline: 1.5px dashed var(--muted); outline-offset: -1.5px; }
+.legend i.heat-swatch-empty { background: var(--surface-2); outline: 1px solid var(--line); outline-offset: -1px; }
 @keyframes pop-prov { from { opacity: 0; transform: scale(.6); } to { opacity: .45; transform: none; } }
 .wday.prov { border: 1px dashed var(--muted); }
 .wday.prov b::after { content: '*'; color: var(--muted); font-size: .8em; }
 
 /* ---- Startseite: frei sortierbare Blöcke ---- */
 .board { display: grid; gap: 16px; grid-template-columns: 1fr; }
+/* Feste Hinweise über dem Board (nicht verschiebbar) */
+.pinned { display: grid; gap: 12px; margin-bottom: 16px; }
+.pinned:empty { display: none; }
+.notice { display: flex; align-items: center; gap: 14px; padding: 16px 18px; }
+.notice > svg { width: 22px; height: 22px; flex: none; }
+.notice > div { flex: 1; min-width: 0; }
+.notice.warn { border-left: 3px solid var(--warn); }
+.notice.warn > svg { color: var(--warn); }
+.notice.open-days { border-left: 3px solid var(--accent); }
+.notice.open-days > svg { color: var(--accent); }
+.notice .btn { flex: none; }
+@media (max-width: 520px) { .notice.open-days { flex-wrap: wrap; } .notice.open-days .btn { width: 100%; } }
+.review { border-top: 3px solid var(--good); }
+.review-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 12px; }
+.review-grid > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.review-grid b { font-size: 1.35rem; font-weight: 400; line-height: 1.1; }
+.review-grid b small { font-size: .8rem; color: var(--muted); }
+.review-grid span { font-size: .78rem; color: var(--muted); }
+.review-grid small.good { color: var(--good); font-size: .72rem; }
+.review-grid small.bad { color: var(--bad); font-size: .72rem; }
+.review-grid b.bad { color: var(--bad); }
+@media (max-width: 420px) { .review-grid { grid-template-columns: repeat(2, 1fr); } }
+/* Offene Tage nachtragen */
+.fill-head { display: flex; justify-content: space-between; align-items: center; }
+.fill-q { font-weight: 600; margin-bottom: 10px; }
+.fill-beers { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.fill-beers .btn { padding: 0; min-height: 52px; font-size: 1.15rem; }
 @media (min-width: 900px) {
   .board { grid-template-columns: 1fr 1fr; grid-auto-flow: row dense; }
-  .board > .blk[data-span="2"] { grid-column: 1 / -1; }
+  .board > .blk[data-span="2"], .board > .blk.fill { grid-column: 1 / -1; }
 }
 .blk { position: relative; min-width: 0; }
 .blk > .card, .blk > .hero { height: 100%; }
@@ -551,3 +583,27 @@ details > summary::-webkit-details-marker { display: none; }
 .sorting { user-select: none; -webkit-user-select: none; }
 .sorting .blk:not(.dragging), .sorting .tile:not(.dragging) { transition: none; }
 .tiles.sorting { overflow: visible; }
+
+[hidden] { display: none !important; }
+
+/* ---- Reiter (Gesundheit) ---- */
+.tabs { display: flex; gap: 4px; margin: 18px 0 0; padding: 4px; background: var(--surface-2); border-radius: 14px; overflow-x: auto; scrollbar-width: none; scroll-margin-top: 12px; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { flex: 1 0 auto; min-height: 42px; padding: 0 9px; border: 0; border-radius: 10px; background: none; color: var(--muted); font: inherit; font-weight: 500; font-size: .84rem; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.range-pills { margin: 12px 0 0; }
+.range-pills .pill { cursor: pointer; border: 0; min-height: 40px; padding: 0 16px; font: inherit; font-size: .85rem; }
+.range-pills .pill::before { display: none; }
+.range-pills .pill[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.tab-panels { display: grid; gap: 16px; margin-top: 16px; }
+
+/* ---- Vergleichstabelle (Bier → Nacht) ---- */
+.table-wrap { overflow-x: auto; }
+table.cmp { width: 100%; border-collapse: collapse; font-size: .9rem; }
+table.cmp th, table.cmp td { padding: 10px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.cmp th:first-child { text-align: left; color: var(--muted); font-weight: 500; }
+table.cmp thead th { font-weight: 600; vertical-align: bottom; }
+table.cmp thead th small { display: block; font-weight: 400; color: var(--muted); font-size: .72rem; }
+table.cmp small.bad { color: var(--bad); }
+table.cmp small.good { color: var(--good); }
+table.cmp tr:last-child th, table.cmp tr:last-child td { border-bottom: 0; }

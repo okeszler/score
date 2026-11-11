@@ -17,7 +17,7 @@ const FIELDS = [
 ];
 
 boot(async main => {
-  const [ctx, sync, keys, bioOk, ver] = await Promise.all([loadContext(1), api('/api/sync'), api('/api/webauthn/credentials'), passkeySupported(), api('/api/version').catch(() => null)]);
+  const [ctx, sync, keys, bioOk, ver, pin] = await Promise.all([loadContext(1), api('/api/sync'), api('/api/webauthn/credentials'), passkeySupported(), api('/api/version').catch(() => null), api('/api/pin').catch(() => ({}))]);
   const g = ctx.goals;
 
   main.innerHTML = `
@@ -50,6 +50,22 @@ boot(async main => {
           <button class="btn secondary block" style="margin-top:14px" id="sync">${icon('sync')} Jetzt synchronisieren</button>
           <p class="muted" style="font-size:.8rem;margin:10px 0 0">Automatisch alle 30 Minuten (06:29–23:59 Uhr). Liest Schritte, Gewicht, Ernährung, Puls, Schlaf, Blutdruck und Aktivitäten („Health Sync …“-Ordner) aus den Google-Drive-Ordnern, die mit dem Service Account geteilt sind.</p>`
         : '<p class="muted">Nicht eingerichtet: Secret <code>GOOGLE_SERVICE_ACCOUNT_JSON</code> fehlt im Pages-Projekt.</p>'}
+      </section>
+
+      <section class="card" id="pin" data-reveal>
+        <div class="card-title">PIN ändern</div>
+        ${pin.short ? '<p class="form-error" style="margin:0 0 12px">Deine PIN ist kurz und leichter zu erraten. Bitte eine neue mit mindestens 6 Ziffern festlegen.</p>' : ''}
+        <form class="form" id="pin-form" novalidate autocomplete="on">
+          <input type="text" name="username" value="oliver" autocomplete="username" hidden>
+          <div class="form-grid" style="grid-template-columns:1fr">
+            <div class="field"><label for="p-cur">Aktuelle PIN</label><input id="p-cur" name="current" type="password" inputmode="numeric" autocomplete="current-password" required></div>
+            <div class="field"><label for="p-new">Neue PIN</label><input id="p-new" name="next" type="password" inputmode="numeric" autocomplete="new-password" minlength="${pin.min || 6}" maxlength="12" pattern="[0-9]*" required>
+              <span class="hint">${pin.min || 6}–12 Ziffern</span></div>
+            <div class="field"><label for="p-rep">Neue PIN wiederholen</label><input id="p-rep" name="repeat" type="password" inputmode="numeric" autocomplete="new-password" required></div>
+          </div>
+          <button class="btn block" type="submit">PIN ändern</button>
+        </form>
+        <p class="muted" style="font-size:.8rem;margin:10px 0 0">Der Fingerabdruck bleibt eingerichtet. Andere angemeldete Geräte werden abgemeldet.</p>
       </section>
 
       <section class="card" data-reveal>
@@ -88,8 +104,8 @@ boot(async main => {
       <div class="row"><span><b>Alkohol</b> (max. 3)</span><b>0 Bier: 3 · 1: 2 · 2: 1 · ab 3: 0 · Wochenbudget überschritten: 0</b></div>
       <div class="row"><span><b>Ampel</b></span><b><span class="pill green">ab 7</span> <span class="pill orange">ab 4</span> <span class="pill red">darunter</span></b></div>
     </div>
-    <p class="muted" style="font-size:.82rem;margin:12px 0 0">Schritte: manueller Wert hat Vorrang, sonst Health Sync, sonst Walk-km × 1.300. kcal und Protein: manueller Wert hat Vorrang, sonst MyFitnessPal (über Health Connect).
-      Tage ohne Eintrag zählen als „kein Eintrag“ (grau), nicht als rot. Risikotag = mehr als ${RISK_DAY_G} g Alkohol (≈ ${fmt(RISK_DAY_G / BEER.alcoholG, 1)} Bier).</p>
+    <p class="muted" style="font-size:.82rem;margin:12px 0 0">Schritte: der höhere Wert aus Handeingabe und Health Sync, sonst Walk-km × 1.300. kcal und Protein: manueller Wert hat Vorrang, sonst MyFitnessPal (über Health Connect).
+      Für Wochenziel, Streaks und Schnitte zählen nur bestätigte Tage (gespeichert, Bier eingetragen oder „Passt so“) – nur Wasser getippt reicht nicht. Tage ohne Eintrag zählen als „kein Eintrag“ (grau), nicht als rot. Risikotag = mehr als ${RISK_DAY_G} g Alkohol (≈ ${fmt(RISK_DAY_G / BEER.alcoholG, 1)} Bier).</p>
   </section>`;
 
   const f = document.getElementById('goals');
@@ -126,6 +142,21 @@ boot(async main => {
       document.dispatchEvent(new CustomEvent('datachange'));
     } catch (ex) { toast(ex.message, 'error'); }
   }));
+  const pf = document.getElementById('pin-form');
+  pf.addEventListener('submit', async e => {
+    e.preventDefault();
+    const { current, next, repeat } = Object.fromEntries(new FormData(pf));
+    if (!/^\d{6,12}$/.test(next)) { toast('Neue PIN: 6 bis 12 Ziffern', 'error'); pf.next.focus(); return; }
+    if (next !== repeat) { toast('Die neuen PINs stimmen nicht überein', 'error'); pf.repeat.focus(); return; }
+    const btn = pf.querySelector('[type=submit]');
+    btn.disabled = true;
+    try {
+      await api('/api/pin', { method: 'POST', body: { current, next } });
+      toast('PIN geändert', 'success');
+      document.dispatchEvent(new CustomEvent('datachange'));
+    } catch (ex) { toast(ex.message, 'error'); btn.disabled = false; }
+  });
+  if (location.hash === '#pin') document.getElementById('pin').scrollIntoView({ block: 'start' });
   document.getElementById('logout').addEventListener('click', async () => {
     await api('/api/logout', { method: 'POST' }).catch(() => {});
     location.href = '/login';
