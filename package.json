@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler pages dev",
-    "test": "node --test test/*.test.js",
+    "test": "node --import ./test/helpers/json-loader.mjs --test test/*.test.js",
     "deploy": "wrangler pages deploy --branch main"
   },
   "devDependencies": {
