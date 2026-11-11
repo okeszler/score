@@ -1,4 +1,4 @@
-import { addDays, effectiveKcal, effectiveSteps, isConfirmed, parseDate, statusFor, weekStart, weekSummary } from '../score.js';
+import { addDays, alcoholUnits, effectiveKcal, effectiveSteps, isConfirmed, parseDate, statusFor, weekStart, weekSummary } from '../score.js';
 import { boot, fmt, fmtDate, loadContext, shell, statusLabel } from '../app.js';
 import { barChart, lineChart } from '../charts.js';
 
@@ -31,7 +31,7 @@ boot(async main => {
   const weeks = [];
   for (let i = WEEKS - 1; i >= 0; i--) {
     const mon = addDays(weekStart(today), -i * 7);
-    const w = weekSummary(daysByDate, scores, goals, mon, today);
+    const w = weekSummary(daysByDate, scores, goals, mon, today, ctx.challenge);
     const wWeights = weights.filter(x => x.weight_kg != null && x.entry_date >= mon && x.entry_date <= addDays(mon, 6));
     const avgW = wWeights.length ? wWeights.reduce((s, x) => s + x.weight_kg, 0) / wWeights.length : null;
     weeks.push({ mon, w, avgW });
@@ -44,7 +44,7 @@ boot(async main => {
     const cur = daysByDate[d];
     if (!isConfirmed(prev) || !isConfirmed(cur)) continue; // nur bestätigte Tage (Bier bekannt)
     const st = effectiveSteps(cur);
-    (prev.beer_count > 0 ? after.beer : after.none).push({ steps: st, score: scores[d].total, tracked: effectiveKcal(cur) != null });
+    (alcoholUnits(prev) > 0 ? after.beer : after.none).push({ steps: st, score: scores[d].total, tracked: effectiveKcal(cur) != null });
   }
   const avg = (arr, k) => { const v = arr.map(x => x[k]).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   const rate = arr => (arr.length ? (arr.filter(x => x.tracked).length / arr.length) * 100 : null);

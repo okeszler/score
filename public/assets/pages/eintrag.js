@@ -1,4 +1,4 @@
-import { addDays, daysBetween, effectiveKcal, effectiveSteps, isConfirmed, isValidDate, scoreDay, weekStart } from '../score.js';
+import { addDays, alcoholUnits, daysBetween, effectiveKcal, effectiveSteps, inChallenge, isConfirmed, isValidDate, scoreDay, weekStart } from '../score.js';
 import { animateIn, api, boot, confirmDialog, esc, fmt, fmtDate, fmtLong, icon, loadContext, ring, shell, statusLabel, toast, today as todayIso } from '../app.js';
 
 shell({ page: 'eintrag', title: 'Eintragen', subtitle: 'Bewegung · Ernährung · Alkohol' });
@@ -21,7 +21,8 @@ boot(async main => {
 
   // Biere der Woche vor diesem Tag (für Wochenbudget im Score)
   let beersBefore = 0;
-  for (let d = weekStart(date); d < date; d = addDays(d, 1)) beersBefore += daysByDate[d]?.beer_count || 0;
+  for (let d = weekStart(date); d < date; d = addDays(d, 1)) beersBefore += alcoholUnits(daysByDate[d]);
+  const chDay = inChallenge(ctx.challenge, date);
 
   const v = (k) => (day?.[k] ?? '');
   main.innerHTML = `
@@ -60,9 +61,14 @@ boot(async main => {
           <div class="input-wrap"><input id="water" name="water_ml" type="number" inputmode="numeric" min="0" max="15000" step="1" value="${v('water_ml')}" placeholder="Ziel ≥ ${goals.water_target}"><span class="suffix">ml</span></div>
           <span class="hint">Jedes Bier zählt zusätzlich mit 250 ml</span></div>
         <div class="field"><label>Bier (0,5 l)</label>
-          <div class="stepper"><button type="button" data-step="-1" aria-label="Weniger Bier">−</button>
+          <div class="stepper"><button type="button" data-step="beer_count:-1" aria-label="Weniger Bier">−</button>
             <input name="beer_count" type="number" inputmode="numeric" min="0" max="40" value="${day?.beer_count ?? 0}" aria-label="Anzahl Bier">
-            <button type="button" data-step="1" aria-label="Mehr Bier">+</button></div></div>
+            <button type="button" data-step="beer_count:1" aria-label="Mehr Bier">+</button></div></div>
+        <div class="field"><label>Stamperl (2 cl)</label>
+          <div class="stepper"><button type="button" data-step="shots_count:-1" aria-label="Weniger Stamperl">−</button>
+            <input name="shots_count" type="number" inputmode="numeric" min="0" max="40" value="${day?.shots_count ?? 0}" aria-label="Anzahl Stamperl">
+            <button type="button" data-step="shots_count:1" aria-label="Mehr Stamperl">+</button></div>
+          <span class="hint">zählt als 0,33 Bier${chDay ? ' · Alkohol-Pause läuft' : ''}</span></div>
       </div>
 
       <div class="field"><label for="note">Notiz</label><textarea id="note" name="note" maxlength="500" rows="2">${esc(v('note'))}</textarea></div>
@@ -98,17 +104,17 @@ boot(async main => {
       steps: n('steps'), walk_km: n('walk_km'), synced_steps: syncSteps,
       synced_kcal: mfp?.kcal ?? null, synced_protein: mfp?.protein ?? null,
       calories_kcal: n('calories_kcal'), protein_g: n('protein_g'), water_ml: n('water_ml'),
-      beer_count: n('beer_count') ?? 0,
+      beer_count: n('beer_count') ?? 0, shots_count: n('shots_count') ?? 0,
       calories_tracked: n('calories_kcal') != null || mfp ? 1 : 0,
       note: fd.get('note'),
     };
   };
 
   const preview = () => {
-    const s = scoreDay(read(), goals, beersBefore);
+    const s = scoreDay(read(), goals, beersBefore, { challenge: chDay });
     document.getElementById('pv').innerHTML = `${ring(s.total, s.status)}
       <div class="parts">
-        ${part('Bewegung', s.parts.bewegung, 4)}${part('Ernährung', s.parts.ernaehrung, 3)}${part('Alkohol', s.parts.alkohol, 3)}
+        ${part('Bewegung', s.parts.bewegung, 4)}${part('Ernährung', s.parts.ernaehrung, 3)}${part('Alkohol', s.parts.alkohol, 3)}${s.challenge ? part('Bonus alkoholfrei', s.parts.bonus, 2) : ''}
       </div>`;
     document.getElementById('pv-pill').innerHTML = `<span class="pill ${s.status}">${statusLabel(s.status)}</span>`;
     animateIn(() => document.querySelectorAll('#pv [data-w]').forEach(i => (i.style.width = `${i.dataset.w}%`)));
@@ -122,8 +128,9 @@ boot(async main => {
     if (isValidDate(f.date.value)) go(`/eintrag?date=${f.date.value}`);
   });
   f.querySelectorAll('[data-step]').forEach(b => b.addEventListener('click', () => {
-    const inp = f.beer_count;
-    inp.value = Math.max(0, Math.min(40, (Number(inp.value) || 0) + Number(b.dataset.step)));
+    const [name, d] = b.dataset.step.split(':');
+    const inp = f.elements.namedItem(name);
+    inp.value = Math.max(0, Math.min(40, (Number(inp.value) || 0) + Number(d)));
     dirty = true;
     preview();
   }));
@@ -166,7 +173,7 @@ boot(async main => {
     return `<div class="list-item st-${s.status}">
       <div class="dot">${s.total}</div>
       <div class="meta"><b>${fmtDate(d.entry_date)}${d.entry_date === date ? ' · <span class="muted">offen</span>' : ''}</b>
-        <span>${st != null ? `${fmt(st)} Schritte` : 'keine Schritte'} · ${effectiveKcal(d) != null ? `${fmt(effectiveKcal(d))} kcal` : 'kcal –'} · ${d.beer_count || 0} Bier${d.gym_kraft || d.gym_kardio ? ' · Gym' : ''}</span></div>
+        <span>${st != null ? `${fmt(st)} Schritte` : 'keine Schritte'} · ${effectiveKcal(d) != null ? `${fmt(effectiveKcal(d))} kcal` : 'kcal –'} · ${d.beer_count || 0} Bier${d.shots_count ? ` · ${d.shots_count} Stamperl` : ''}${d.gym_kraft || d.gym_kardio ? ' · Gym' : ''}</span></div>
       <div class="actions"><a href="/eintrag?date=${d.entry_date}" class="icon-btn" style="width:34px;height:34px;border:0" aria-label="Bearbeiten">${icon('edit')}</a></div>
     </div>`;
   }).join('') : '<div class="empty-state">Noch keine Einträge.</div>';

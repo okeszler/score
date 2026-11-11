@@ -106,12 +106,13 @@ export async function loadContext(daysBack = 120) {
   let daysByDate = {};
   for (const d of data.days) daysByDate[d.entry_date] = d;
   daysByDate = withProvisionalDays(daysByDate, data.synced, data.food || {}, t);
-  const scores = scoreAll(daysByDate, goals);
+  const challenge = data.challenge?.start ? data.challenge : null;
+  const scores = scoreAll(daysByDate, goals, challenge);
   const weights = data.weights;
   const lastWeight = [...weights].reverse().find(w => w.weight_kg != null) || null;
   const firstWeight = weights.find(w => w.weight_kg != null) || null;
   const lastFat = [...weights].reverse().find(w => w.body_fat_pct != null) || null;
-  return { today: t, goals, daysByDate, scores, weights, synced: data.synced, food: data.food || {}, lastWeight, firstWeight, lastFat };
+  return { today: t, goals, daysByDate, scores, weights, synced: data.synced, food: data.food || {}, lastWeight, firstWeight, lastFat, challenge };
 }
 
 // ---------- Formatierung ----------

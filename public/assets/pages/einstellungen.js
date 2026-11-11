@@ -19,6 +19,7 @@ const FIELDS = [
 boot(async main => {
   const [ctx, sync, keys, bioOk, ver, pin] = await Promise.all([loadContext(1), api('/api/sync'), api('/api/webauthn/credentials'), passkeySupported(), api('/api/version').catch(() => null), api('/api/pin').catch(() => ({}))]);
   const g = ctx.goals;
+  const ch = ctx.challenge;
 
   main.innerHTML = `
   <div class="grid grid-2">
@@ -80,6 +81,20 @@ boot(async main => {
           : '<p class="muted" style="font-size:.82rem;margin:10px 0 0">Dieser Browser bzw. dieses Gerät unterstützt keine Fingerabdruck-Anmeldung.</p>'}
       </section>
 
+      <section class="card" id="challenge" data-reveal>
+        <div class="card-title">Alkohol-Pause</div>
+        ${ch ? `<form class="form" id="ch-form" novalidate>
+          <div class="form-grid">
+            <div class="field"><label for="c-s">Start</label><input id="c-s" type="date" name="start" value="${esc(ch.start)}"></div>
+            <div class="field"><label for="c-c">Kontrolltermin</label><input id="c-c" type="date" name="check" value="${esc(ch.check || '')}"></div>
+          </div>
+          <div class="btn-row"><button class="btn" type="submit" style="flex:1">Speichern</button><button class="btn danger" type="button" id="ch-end" style="flex:1">Beenden</button></div>
+        </form>
+        <p class="muted" style="font-size:.8rem;margin:10px 0 0">Während der Pause: Bier-Budget 0, alkoholfreier Tag +2 Bonus, Tag mit Alkohol höchstens Orange.
+          „Beenden“ blendet die Challenge aus; die eingetragenen Tage bleiben.</p>`
+        : '<p class="muted" style="margin:0">Keine Challenge aktiv. Starten auf der Startseite.</p>'}
+      </section>
+
       <section class="card" data-reveal>
         <div class="card-title">Daten exportieren (CSV, Excel)</div>
         <div class="btn-row">${[['tage', 'Tage'], ['koerper', 'Körper'], ['blutdruck', 'Blutdruck'], ['blutwerte', 'Blutwerte']]
@@ -101,7 +116,8 @@ boot(async main => {
     <div class="rows">
       <div class="row"><span><b>Bewegung</b> (max. 4)</span><b>Schritte ≥ 100 % Ziel: 3 · ≥ 75 %: 2 · ≥ 50 %: 1 · + Training: 1</b></div>
       <div class="row"><span><b>Ernährung</b> (max. 3)</span><b>kcal ≤ Ziel: 1 · Protein ≥ Ziel: 1 · Trinken ≥ Ziel: 1 (Bier zählt halb)</b></div>
-      <div class="row"><span><b>Alkohol</b> (max. 3)</span><b>0 Bier: 3 · 1: 2 · 2: 1 · ab 3: 0 · Wochenbudget überschritten: 0</b></div>
+      <div class="row"><span><b>Alkohol</b> (max. 3)</span><b>0 Bier: 3 · bis 1: 2 · bis 2: 1 · darüber: 0 · Wochenbudget überschritten: 0 (1 Stamperl = 0,33 Bier)</b></div>
+      <div class="row"><span><b>Alkohol-Pause</b></span><b>Budget 0 · alkoholfreier Tag +2 (max. 10) · Tag mit Alkohol höchstens 6 (Orange)</b></div>
       <div class="row"><span><b>Ampel</b></span><b><span class="pill green">ab 7</span> <span class="pill orange">ab 4</span> <span class="pill red">darunter</span></b></div>
     </div>
     <p class="muted" style="font-size:.82rem;margin:12px 0 0">Schritte: der höhere Wert aus Handeingabe und Health Sync, sonst Walk-km × 1.300. kcal und Protein: manueller Wert hat Vorrang, sonst MyFitnessPal (über Health Connect).
@@ -155,6 +171,24 @@ boot(async main => {
       toast('PIN geändert', 'success');
       document.dispatchEvent(new CustomEvent('datachange'));
     } catch (ex) { toast(ex.message, 'error'); btn.disabled = false; }
+  });
+  const cf = document.getElementById('ch-form');
+  cf?.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!cf.start.value || !cf.check.value || cf.check.value <= cf.start.value) { toast('Kontrolltermin muss nach dem Start liegen', 'error'); return; }
+    try {
+      await api('/api/settings', { method: 'PUT', body: { key: 'challenge', value: { ...ch, start: cf.start.value, check: cf.check.value } } });
+      toast('Alkohol-Pause gespeichert', 'success');
+      document.dispatchEvent(new CustomEvent('datachange'));
+    } catch (ex) { toast(ex.message, 'error'); }
+  });
+  document.getElementById('ch-end')?.addEventListener('click', async () => {
+    if (!(await confirmDialog('Alkohol-Pause beenden? Die eingetragenen Tage bleiben erhalten.', 'Beenden'))) return;
+    try {
+      await api('/api/settings', { method: 'PUT', body: { key: 'challenge', value: null } });
+      toast('Alkohol-Pause beendet', 'success');
+      document.dispatchEvent(new CustomEvent('datachange'));
+    } catch (ex) { toast(ex.message, 'error'); }
   });
   if (location.hash === '#pin') document.getElementById('pin').scrollIntoView({ block: 'start' });
   document.getElementById('logout').addEventListener('click', async () => {
