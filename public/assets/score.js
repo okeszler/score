@@ -298,7 +298,7 @@ export function weightTrend(weights, goalKg, today, windowDays = 42) {
 }
 
 /**
- * Kalorienziel-Check: geschätzter Tagesbedarf (Grundumsatz × 1,15 + Schritte) gegen Ziel, Gegessenes und Waage.
+ * Kalorienziel-Check (schlägt in der App nie eine Erhöhung über das gesetzte Ziel vor): geschätzter Tagesbedarf (Grundumsatz × 1,15 + Schritte) gegen Ziel, Gegessenes und Waage.
  * Mit genug Daten (≥ 10 Tage mit kcal, ≥ 4 Wiegungen) wird der Bedarf zusätzlich aus Essen + tatsächlichem
  * Gewichtsverlauf geschätzt – das deckt unvollständiges Tracking oder einen überschätzten Bedarf auf.
  */
