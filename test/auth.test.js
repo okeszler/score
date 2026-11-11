@@ -51,3 +51,31 @@ test('PIN-Anmeldung: Sperre nach 5 Fehlversuchen, auch bei parallelen Anfragen',
   assert.ok(st.locked_until - Date.now() / 1000 > 200);
   clearInterval(tick);
 });
+
+test('PIN ändern: alte PIN nötig, mind. 6 Ziffern, danach gilt nur die neue; Sessions werden ungültig', async () => {
+  const { onRequestPost: changePin, onRequestGet: pinInfo } = await import('../functions/api/pin.js');
+  const { pinIsShort } = await import('../lib/auth.js');
+  const db = createD1();
+  await ensureSchema(db);
+  const e = env(db);
+  const change = body => changePin({ env: e, request: new Request('https://s.test/api/pin', { method: 'POST', body: JSON.stringify(body) }) });
+  assert.equal((await (await pinInfo({ env: e })).json()).short, true); // '4711' ist kurz
+  const oldKey = await signingKey(e);
+  assert.equal((await change({ current: '4711', next: '12345' })).status, 400);    // zu kurz
+  assert.equal((await change({ current: '4711', next: '123456' })).status, 400);   // zu leicht
+  assert.equal((await change({ current: '4711', next: '111111' })).status, 400);   // zu leicht
+  const r = await change({ current: '4711', next: '583920' });
+  assert.equal(r.status, 200);
+  assert.match(r.headers.get('Set-Cookie'), /score_session=/);
+  assert.equal(await pinIsShort(e), false);
+  const newKey = await signingKey(e);
+  assert.notEqual(newKey, oldKey);                                                   // alte Sessions ungültig
+  assert.equal(await verifySession(withCookie(r.headers.get('Set-Cookie')), newKey), true);
+  // Anmeldung: alte PIN geht nicht mehr, neue schon; gespeichert ist nur ein HMAC
+  const loginTry = async pin => (await login({ env: e, request: new Request('https://s.test/api/login', { method: 'POST', body: JSON.stringify({ password: pin }) }) })).status;
+  assert.equal(await loginTry('4711'), 401);
+  assert.equal(await loginTry('583920'), 200);
+  const stored = (await db.prepare(`SELECT value FROM auth_secret`).first()).value;
+  assert.ok(!stored.includes('583920'));
+  assert.equal((await change({ current: '583920', next: '583920' })).status, 400);  // muss sich unterscheiden
+});

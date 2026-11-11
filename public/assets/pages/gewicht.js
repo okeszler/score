@@ -1,4 +1,4 @@
-import { addDays, daysBetween, weightTrend, KCAL_PER_KG_FAT } from '../score.js';
+import { addDays, calorieCheck, CAL_CHECK, daysBetween, weightTrend, KCAL_PER_KG_FAT } from '../score.js';
 import { api, boot, confirmDialog, countUp, fmt, fmtDate, fmtLong, icon, loadContext, shell, toast } from '../app.js';
 import { lineChart } from '../charts.js';
 
@@ -8,7 +8,7 @@ let range = 90;
 try { range = Number(localStorage.getItem('weightRange')) || 90; } catch {}
 
 boot(async main => {
-  const ctx = await loadContext(7);
+  const ctx = await loadContext(35);
   const { today, goals, weights, lastWeight, firstWeight, lastFat } = ctx;
   const ws = weights.filter(w => w.weight_kg != null);
   const fats = weights.filter(w => w.body_fat_pct != null);
@@ -33,6 +33,8 @@ boot(async main => {
   const min = ws.length ? Math.min(...ws.map(w => w.weight_kg)) : null;
   const trend = weightTrend(weights, goals.weight_kg, today);
   const toGo = lastWeight ? lastWeight.weight_kg - goals.weight_kg : null;
+
+  const cal = calorieCheck({ weights, daysByDate: ctx.daysByDate, goals, today, bmr: lbmr?.bmr_kcal });
 
   // Szenarien: bei welchem Tempo wann am Ziel?
   const scen = toGo > 0 ? [0.25, 0.5, 0.75].map(r => ({
@@ -92,8 +94,8 @@ boot(async main => {
       <div><b>${lwat ? fmt(lwat.body_water_kg, 1) : '–'}<small> kg</small></b><span>Körperwasser${lwat?.weight_kg ? ` · ${fmt((lwat.body_water_kg / lwat.weight_kg) * 100, 0)} %` : ''}</span></div>
       <div><b>${lbmr ? fmt(lbmr.bmr_kcal) : '–'}<small> kcal</small></b><span>Grundumsatz</span></div>
     </div>
-    ${lbmr ? `<p class="muted" style="font-size:.8rem;margin:12px 0 0">Grundumsatz ${fmt(lbmr.bmr_kcal)} kcal + Alltag/Bewegung ≈ ${fmt(Math.round(lbmr.bmr_kcal * 1.35 / 50) * 50)} kcal Tagesbedarf. Dein Kalorienziel von ${fmt(goals.kcal_target)} kcal entspricht damit ca. ${fmt(Math.max(0, Math.round(lbmr.bmr_kcal * 1.35 - goals.kcal_target)))} kcal Defizit pro Tag.</p>` : ''}
   </section>
+  ${cal ? calCard(cal) : ''}
 
   <div class="grid grid-2" style="margin-top:16px">
     <section class="card" data-reveal>
@@ -133,6 +135,14 @@ boot(async main => {
     height: 190, unit: 'kg', label: 'Körperwasser und Muskelmasse', empty: 'Noch keine Werte – kommen mit der nächsten Messung auf der Waage',
   });
 
+  main.querySelector('[data-set-kcal]')?.addEventListener('click', async e => {
+    e.target.disabled = true;
+    try {
+      await api('/api/goals', { method: 'PUT', body: { kcal_target: Number(e.target.dataset.setKcal) } });
+      toast('Kalorienziel geändert', 'success');
+      document.dispatchEvent(new CustomEvent('datachange'));
+    } catch (ex) { toast(ex.message, 'error'); e.target.disabled = false; }
+  });
   main.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => {
     range = Number(b.dataset.range);
     try { localStorage.setItem('weightRange', range); } catch {}
@@ -168,3 +178,27 @@ boot(async main => {
     } catch (ex) { toast(ex.message, 'error'); }
   });
 });
+
+function calCard(c) {
+  const rate = r => `${r >= 0 ? '−' : '+'}${fmt(Math.abs(r), 2)} kg/Woche`;
+  const diff = c.suggest - c.target;
+  return `
+  <section class="card" data-reveal style="margin-top:16px">
+    <div class="card-title">Kalorienziel-Check</div>
+    <div class="rows">
+      <div class="row"><span>Geschätzter Tagesbedarf <small class="muted">(Grundumsatz ${fmt(c.bmr)} kcal + Ø ${fmt(c.avgSteps)} Schritte)</small></span><b>≈ ${fmt(c.need)} kcal</b></div>
+      <div class="row"><span>Dein Ziel</span><b>${fmt(c.target)} kcal <small class="muted">→ ${rate(c.targetRate)}</small></b></div>
+      <div class="row"><span>Ø gegessen <small class="muted">(${c.kcalDays} von ${CAL_CHECK.days} Tagen erfasst)</small></span><b>${c.avgKcal != null ? `${fmt(c.avgKcal)} kcal` : '–'}</b></div>
+      <div class="row"><span>Tatsächlich laut Waage <small class="muted">(${c.weighIns} Wiegungen, 6 Wochen)</small></span><b>${c.realRate != null ? rate(c.realRate) : '–'}</b></div>
+      ${c.realNeed != null ? `<div class="row"><span>Bedarf laut Essen + Waage</span><b>≈ ${fmt(c.realNeed)} kcal</b></div>` : ''}
+    </div>
+    <p style="margin:14px 0 0;font-size:.9rem">${c.enough
+      ? `${c.realNeed < c.need - 250
+        ? 'Die Waage zeigt weniger Abnahme, als die erfassten Kalorien erwarten lassen – vermutlich wird nicht alles erfasst (Getränke, Snacks, Öl) oder der Bedarf ist niedriger als geschätzt.'
+        : 'Essen und Waage passen zusammen.'} Für <b>0,5 kg pro Woche</b> passen etwa <b>${fmt(c.suggest)} kcal</b>${c.suggest <= c.bmr ? ' (nicht unter dem Grundumsatz)' : ''}.`
+      : `${c.realRate != null && c.targetRate - c.realRate > 0.25
+        ? `Rechnerisch müsstest du mit deinem Ziel etwa ${fmt(c.targetRate, 2)} kg pro Woche abnehmen, die Waage zeigt bisher ${fmt(c.realRate, 2)} kg. Meist wird dann nicht alles erfasst (Getränke, Snacks, Öl) oder das Ziel nicht jeden Tag eingehalten – <b>Ziel deshalb vorerst lassen</b>. `
+        : ''}Für einen belastbaren Abgleich fehlen noch ${[CAL_CHECK.minKcalDays - c.kcalDays > 0 ? `${CAL_CHECK.minKcalDays - c.kcalDays} Tage mit kcal` : '', CAL_CHECK.minWeighIns - c.weighIns > 0 ? `${CAL_CHECK.minWeighIns - c.weighIns} Wiegungen` : ''].filter(Boolean).join(' und ')} (letzte 4 bzw. 6 Wochen).`}</p>
+    ${c.enough && Math.abs(diff) >= 100 ? `<button class="btn secondary block" style="margin-top:12px" data-set-kcal="${c.suggest}">Kalorienziel auf ${fmt(c.suggest)} kcal setzen</button>` : c.enough ? '<p class="muted" style="font-size:.8rem;margin:10px 0 0">Dein Ziel passt dazu ✓</p>' : ''}
+  </section>`;
+}

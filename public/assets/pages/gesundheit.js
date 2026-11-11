@@ -1,4 +1,4 @@
-import { addDays } from '../score.js';
+import { addDays, isConfirmed } from '../score.js';
 import { bpCategory, STAGE_LABELS } from '../health.js';
 import { api, boot, confirmDialog, countUp, esc, fmt, fmtDate, icon, shell, today, toast } from '../app.js';
 import { barChart, lineChart } from '../charts.js';
@@ -8,7 +8,12 @@ shell({ page: 'gesundheit', title: 'Gesundheit', subtitle: 'Blutdruck · Puls ·
 const RANGES = [[30, '30 T'], [90, '90 T'], [365, '1 J'], [0, 'Alles']];
 let range = 90;
 let labTest = null;
-try { range = Number(localStorage.getItem('healthRange') ?? 90); labTest = localStorage.getItem('labTest'); } catch {}
+let tab = 'bp';
+try { range = Number(localStorage.getItem('healthRange') ?? 90); labTest = localStorage.getItem('labTest'); tab = localStorage.getItem('healthTab') || tab; } catch {}
+// Reiter: #bp, #puls, #schlaf, #labor, #aktiv (Links von der Startseite öffnen direkt den passenden)
+const TABS = [['bp', 'Blutdruck'], ['puls', 'Puls'], ['schlaf', 'Schlaf'], ['labor', 'Blutwerte'], ['aktiv', 'Aktivitäten']];
+const fromHash = () => { const h = location.hash.slice(1); return TABS.some(([k]) => k === h) ? h : null; };
+tab = fromHash() || tab;
 
 const ACT = { WALKING: 'Gehen', RUNNING: 'Laufen', BIKING: 'Radfahren', CYCLING: 'Radfahren', SWIMMING: 'Schwimmen',
   STRENGTH_TRAINING: 'Krafttraining', WEIGHTLIFTING: 'Krafttraining', HIKING: 'Wandern', ELLIPTICAL: 'Crosstrainer',
@@ -22,7 +27,13 @@ const avg = a => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : null);
 
 boot(async main => {
   const t = today();
-  const h = await api('/api/health?from=0000-01-01');
+  // Für Diagramme reicht der Zeitraum, für Bier → Nacht mind. ein halbes Jahr (Blutwerte liefert der Server immer komplett)
+  const fetchFrom = range ? addDays(t, -Math.max(range, 180)) : '0000-01-01';
+  const [h, data] = await Promise.all([
+    api(`/api/health?from=${fetchFrom}`),
+    api(`/api/data?from=${addDays(t, -180)}`).catch(() => null),
+  ]);
+  const beerNight = beerVsNight(h, data);
   const from = range ? addDays(t, -range) : null;
   const inR = d => !from || d >= from;
 
@@ -77,12 +88,15 @@ boot(async main => {
     </a>
   </div>
 
-  <div class="toggles" style="margin:18px 0 0" role="group" aria-label="Zeitraum">
-    ${RANGES.map(([v, l]) => `<button class="pill" data-range="${v}" style="cursor:pointer;border:0;${range === v ? 'background:var(--accent-soft);color:var(--accent)' : ''}">${l}</button>`).join('')}
+  <div class="tabs" role="tablist" aria-label="Bereiche">
+    ${TABS.map(([k, l]) => `<button role="tab" class="tab" data-tab-btn="${k}" aria-selected="${tab === k}">${l}</button>`).join('')}
+  </div>
+  <div class="toggles range-pills" role="group" aria-label="Zeitraum">
+    ${RANGES.map(([v, l]) => `<button class="pill" data-range="${v}" aria-pressed="${range === v}">${l}</button>`).join('')}
   </div>
 
-  <div class="grid grid-2" style="margin-top:16px">
-    <section class="card" id="bp" data-reveal>
+  <div class="tab-panels">
+    <section class="card" id="bp" data-tab="bp" data-reveal>
       <div class="card-title">Blutdruck ${lastCat ? `<span class="pill ${lastCat.status}">${lastCat.label}</span>` : ''}</div>
       <div id="ch-bp"></div>
       <div class="legend"><span><i class="line" style="background:var(--accent)"></i>Systolisch</span><span><i class="line" style="background:var(--blue)"></i>Diastolisch</span><span><i class="dash"></i>130/85 (hoch-normal ab)</span></div>
@@ -103,7 +117,7 @@ boot(async main => {
       ${bps.length > 3 ? `<details style="margin-top:4px"><summary class="btn ghost" style="padding:0">Alle ${bps.length} Messungen</summary>${bpList(bps.slice(0, -3).reverse())}</details>` : ''}
     </section>
 
-    <section class="card" id="puls" data-reveal>
+    <section class="card" id="puls" data-tab="puls" data-reveal>
       <div class="card-title">Puls</div>
       <div class="kv" style="margin-bottom:12px">
         <div><b>${lastRest ? fmt(lastRest.resting, 0) : '–'}</b><span>Ruhepuls letzte Nacht</span></div>
@@ -114,9 +128,8 @@ boot(async main => {
       <div class="legend"><span><i class="line" style="background:var(--accent)"></i>Ruhepuls (Nacht)</span><span><i class="line" style="background:var(--muted)"></i>Ø Tagespuls</span></div>
       <p class="muted" style="font-size:.78rem;margin:10px 0 0">Ruhepuls = Ø Puls während der Hauptnacht (Uhr/Ring über Health Connect). Ein sinkender Ruhepuls zeigt bessere Fitness und Erholung; nach Alkohol steigt er meist deutlich.</p>
     </section>
-  </div>
 
-  <section class="card" id="schlaf" data-reveal style="margin-top:16px">
+  <section class="card" id="schlaf" data-tab="schlaf" data-reveal>
     <div class="card-title">Schlaf ${lastNight ? `<span class="muted" style="text-transform:none;letter-spacing:0">Nacht auf ${fmtDate(lastNight.date, { weekday: 'long', day: '2-digit', month: '2-digit' })}</span>` : ''}</div>
     ${lastNight ? `
       <div class="kv" style="margin-bottom:12px">
@@ -132,8 +145,9 @@ boot(async main => {
     <div id="ch-sleep" style="margin-top:16px"></div>
     <div class="legend"><span><i class="st-green"></i>≥ 7 h</span><span><i class="st-orange"></i>6–7 h</span><span><i class="st-red"></i>&lt; 6 h</span></div>
   </section>
+  <section class="card" data-tab="schlaf" data-reveal>${beerNightCard(beerNight)}</section>
 
-  <section class="card" id="labor" data-reveal style="margin-top:16px">
+  <section class="card" id="labor" data-tab="labor" data-reveal>
     <div class="card-title">Blutwerte <a href="/api/export?type=blutwerte">${icon('download').replace('<svg', '<svg style="width:16px;height:16px;vertical-align:-3px"')} CSV</a></div>
     ${tests.length ? `<div class="field" style="margin-bottom:12px"><label for="lab-sel">Test</label>
         <select id="lab-sel">${tests.map(n => `<option ${n === labTest ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>
@@ -161,13 +175,28 @@ boot(async main => {
       }).join('')}</div></details>` : ''}
   </section>
 
-  <section class="card" data-reveal style="margin-top:16px">
+  <section class="card" id="aktiv" data-tab="aktiv" data-reveal>
     <div class="card-title">Aktivitäten</div>
-    <div class="list wrap">${h.activities.slice(0, 8).map(a => `
+    <div class="list wrap">${h.activities.slice(0, 20).map(a => `
       <div class="list-item"><div class="dot" style="background:var(--blue)">${icon('flex').replace('<svg', '<svg style="width:18px;height:18px"')}</div>
         <div class="meta"><b>${esc(actLabel(a.activity_type))} · ${hm(a.active_seconds ?? a.elapsed_seconds)} h</b>
         <span>${fmtDate(a.entry_date)} ${a.start_time ? a.start_time.slice(0, 5) : ''}${a.distance_km ? ` · ${fmt(a.distance_km, 2)} km` : ''}${a.calories ? ` · ${fmt(a.calories)} kcal` : ''}${a.steps ? ` · ${fmt(a.steps)} Schritte` : ''}${a.avg_hr ? ` · Ø ${fmt(a.avg_hr)} bpm` : ''}</span></div></div>`).join('') || '<div class="empty-state">Noch keine Aktivitäten.</div>'}</div>
-  </section>`;
+  </section>
+  </div>`;
+
+  // ---- Reiter ----
+  const show = k => {
+    tab = k;
+    main.querySelectorAll('[data-tab]').forEach(s => (s.hidden = s.dataset.tab !== k));
+    main.querySelectorAll('[data-tab-btn]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tabBtn === k)));
+    main.querySelector('.range-pills').hidden = k === 'labor' || k === 'aktiv';
+    try { localStorage.setItem('healthTab', k); } catch {}
+    if (location.hash !== `#${k}`) history.replaceState(null, '', `#${k}`);
+  };
+  show(tab);
+  main.querySelectorAll('[data-tab-btn]').forEach(b => b.addEventListener('click', () => show(b.dataset.tabBtn)));
+  main.querySelectorAll('.tiles a[href^="#"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); show(a.getAttribute('href').slice(1)); main.querySelector('.tabs').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+  window.onhashchange = () => { const k = fromHash(); if (k && k !== tab) show(k); };
 
   countUp(document.getElementById('t-rest'), lastRest?.resting ?? null, 0, 700);
 
@@ -274,4 +303,48 @@ function bpList(rows) {
       <span>${fmtDate(b.entry_date, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}${b.reading_time ? ` · ${b.reading_time.slice(0, 5)}` : ''} · ${b.source === 'sync' ? 'Samsung Health' : 'manuell'}${b.note ? ` · ${esc(b.note)}` : ''}</span></div>
       <div class="actions"><button class="del" data-bp="${b.id}" aria-label="Löschen">${icon('trash')}</button></div></div>`;
   }).join('') || '<div class="empty-state">Noch keine Messungen.</div>'}</div>`;
+}
+
+// ---------- Bier → Nacht: Ruhepuls und Schlaf in der Nacht nach 0 / 1–2 / 3+ Bier ----------
+const MIN_NIGHTS = 3;
+function beerVsNight(h, data) {
+  if (!data) return null;
+  const nightOn = Object.fromEntries(h.nights.map(n => [n.date, n]));
+  const restOn = Object.fromEntries(h.pulse.filter(p => p.resting != null).map(p => [p.date, p.resting]));
+  const groups = [['0 Bier', b => b === 0], ['1–2 Bier', b => b >= 1 && b <= 2], ['3+ Bier', b => b >= 3]].map(([label, test]) => ({ label, test, rows: [] }));
+  for (const d of data.days) {
+    if (!isConfirmed(d) || d.confirmed === 0) continue; // nur Tage mit bekanntem Bier
+    const wake = addDays(d.entry_date, 1); // die Nacht gehört zum Aufwach-Tag
+    const n = nightOn[wake];
+    if (!n) continue;
+    groups.find(g => g.test(d.beer_count || 0))?.rows.push({ sleep: n.asleepSeconds, deep: n.stages.deep ?? null, rem: n.stages.rem ?? null, rest: restOn[wake] ?? null });
+  }
+  const mean = (rows, k) => avg(rows.map(r => r[k]).filter(v => v != null));
+  return groups.map(g => ({ label: g.label, n: g.rows.length, sleep: mean(g.rows, 'sleep'), deep: mean(g.rows, 'deep'), rem: mean(g.rows, 'rem'), rest: mean(g.rows, 'rest') }));
+}
+
+function beerNightCard(groups) {
+  const head = '<div class="card-title">Bier → Nacht</div>';
+  if (!groups) return `${head}<div class="empty-state">Daten konnten nicht geladen werden.</div>`;
+  const ok = groups.filter(g => g.n >= MIN_NIGHTS);
+  const base = groups[0];
+  const cell = (g, k, f) => (g.n < MIN_NIGHTS || g[k] == null ? '<td class="muted">–</td>' : `<td>${f(g[k])}${g !== base && base.n >= MIN_NIGHTS && base[k] != null ? diff(g[k] - base[k], k) : ''}</td>`);
+  const diff = (d, k) => {
+    if (Math.abs(d) < (k === 'rest' ? 0.5 : 300)) return '';
+    const worse = k === 'rest' ? d > 0 : d < 0;
+    return ` <small class="${worse ? 'bad' : 'good'}">${d > 0 ? '+' : '−'}${k === 'rest' ? fmt(Math.abs(d), 1) : hm(Math.abs(d))}</small>`;
+  };
+  return `${head}
+    <p class="muted" style="margin:0 0 12px;font-size:.85rem">Nächte nach bestätigten Tagen, verglichen nach Bier am Vorabend (letzte 6 Monate).</p>
+    <div class="table-wrap"><table class="cmp">
+      <thead><tr><th></th>${groups.map(g => `<th>${g.label}<small>${g.n} ${g.n === 1 ? 'Nacht' : 'Nächte'}</small></th>`).join('')}</tr></thead>
+      <tbody>
+        <tr><th>Ruhepuls</th>${groups.map(g => cell(g, 'rest', v => `${fmt(v, 1)} bpm`)).join('')}</tr>
+        <tr><th>Schlaf</th>${groups.map(g => cell(g, 'sleep', v => `${hm(v)} h`)).join('')}</tr>
+        <tr><th>Tiefschlaf</th>${groups.map(g => cell(g, 'deep', v => `${hm(v)} h`)).join('')}</tr>
+        <tr><th>REM</th>${groups.map(g => cell(g, 'rem', v => `${hm(v)} h`)).join('')}</tr>
+      </tbody></table></div>
+    <p class="muted" style="font-size:.78rem;margin:10px 0 0">${ok.length < 2
+      ? `Noch zu wenig Daten: je Gruppe mind. ${MIN_NIGHTS} Nächte mit Uhr. Uhr nachts tragen und offene Tage bestätigen – dann füllt sich die Tabelle.`
+      : 'Abweichungen gegenüber Nächten ohne Bier. Ein höherer Ruhepuls und weniger Tief-/REM-Schlaf zeigen, wie stark Alkohol die Erholung bremst.'}</p>`;
 }

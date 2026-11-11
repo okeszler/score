@@ -16,7 +16,9 @@ boot(async main => {
   const sunday = addDays(monday, 6);
   const daysLeft = isCurrent ? 7 - (daysBetween(monday, today) + 1) : 0;
   // heute kann noch grün bzw. alkoholfrei werden
-  const todayOpen = isCurrent && scores[today]?.status !== 'green' ? 1 : 0;
+  // noch erreichbar: offene (unbestätigte) Tage dieser Woche bis heute können grün werden, dazu die restlichen Tage
+  const openReachable = w.days.filter(d => !d.future && !(d.score.status === 'green' && !d.score.provisional)
+    && (d.date === today ? isCurrent : d.score.provisional && d.score.status === 'green')).length;
   const greenPct = Math.min(100, (w.green / w.goalGreen) * 100);
   const alcPct = Math.min(100, (w.alcoholG / Math.max(1, w.alcoholBudgetG)) * 100);
   const afOk = w.alcoholFree >= MIN_ALCOHOL_FREE_DAYS;
@@ -37,10 +39,10 @@ boot(async main => {
          ${d.future ? '' : `href="/eintrag?date=${d.date}"`} title="${fmtDate(d.date)}: ${d.score.total ?? 'kein Eintrag'}">
         ${WD[i]}<b>${d.score.total ?? '–'}</b></a>`).join('')}</div>
     <div style="margin-top:18px">
-      <div class="row" style="border:0;padding-top:0"><span>Grüne Tage</span><b><span id="g">0</span> von ${w.goalGreen} ${w.reached ? '✓' : ''}</b></div>
+      <div class="row" style="border:0;padding-top:0"><span>Grüne Tage</span><b><span id="g">0</span> von ${w.goalGreen} ${w.reached ? '✓' : ''}${w.greenProvisional ? ` <small class="muted">+${w.greenProvisional} offen</small>` : ''}</b></div>
       <div class="progress ${w.reached ? '' : 'warn'}"><i data-w="${greenPct}"></i></div>
-      <p class="muted" style="font-size:.85rem;margin:10px 0 0">${w.logged - w.provisional} von ${isCurrent ? 7 - daysLeft : 7} Tagen bestätigt${w.provisional ? ` · ${w.provisional} vorläufig (Bier unbestätigt)` : ''}${
-        isCurrent && !w.reached ? ` · noch ${daysLeft} ${daysLeft === 1 ? 'Tag' : 'Tage'}, ${Math.max(0, w.goalGreen - w.green)} grüne fehlen${w.goalGreen - w.green > daysLeft + todayOpen ? ' – diese Woche nicht mehr erreichbar' : ''}` : ''}</p>
+      <p class="muted" style="font-size:.85rem;margin:10px 0 0">${w.confirmed} von ${isCurrent ? 7 - daysLeft : 7} Tagen bestätigt${w.provisional ? ` · ${w.provisional} offen (Bier unbestätigt, zählt erst nach Bestätigung)` : ''}${
+        isCurrent && !w.reached ? ` · noch ${daysLeft} ${daysLeft === 1 ? 'Tag' : 'Tage'}, ${Math.max(0, w.goalGreen - w.green)} grüne fehlen${w.goalGreen - w.green > daysLeft + openReachable ? ' – diese Woche nicht mehr erreichbar' : ''}` : ''}</p>
     </div>
   </section>
 
@@ -52,7 +54,7 @@ boot(async main => {
         <div><b id="s2">0</b><span>Wochen-Streak</span></div>
       </div>
       <div class="rows">
-        <div class="row"><span>Ø Score</span><b>${fmt(w.avgScore, 1)}</b></div>
+        <div class="row"><span>Ø Score <small class="muted">(bestätigte Tage)</small></span><b>${w.avgScore != null ? fmt(w.avgScore, 1) : '–'}</b></div>
         <div class="row"><span>Ø Schritte</span><b>${fmt(w.avgSteps)}</b></div>
         <div class="row"><span>Ø Kalorien</span><b>${w.avgKcal != null ? `${fmt(w.avgKcal)} kcal` : '–'}</b></div>
         <div class="row"><span>Ø Wasser</span><b class="${w.avgWater == null ? '' : w.avgWater >= goals.water_target ? 'good' : 'warn'}">${w.avgWater != null ? `${fmt(w.avgWater)} ml` : '–'}</b></div>

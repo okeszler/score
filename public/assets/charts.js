@@ -108,7 +108,8 @@ export function lineChart(container, opts) {
 
     if (opts.goal) {
       el('line', { class: 'goal-line', x1: pad.l, x2: W - pad.r, y1: Y(opts.goal.y), y2: Y(opts.goal.y) }, svg);
-      el('text', { class: 'goal-label', x: pad.l + 4, y: Y(opts.goal.y) - 6, 'text-anchor': 'start' }, svg).textContent = opts.goal.label;
+      // Beschriftung rechts über der Linie (links liegt sie oft auf den ersten Datenpunkten)
+      if (opts.goal.label) el('text', { class: 'goal-label', x: W - pad.r - 2, y: Y(opts.goal.y) - 6, 'text-anchor': 'end' }, svg).textContent = opts.goal.label;
     }
 
     const defs = el('defs', {}, svg);
@@ -260,6 +261,27 @@ export function sparkline(container, values, color = 'var(--blue)', { area = fal
   p.style.strokeDasharray = len;
   p.style.strokeDashoffset = len;
   p.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: 1200, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' });
+}
+
+/**
+ * Mini-Säulen je Tag für Kacheln: Lücken bleiben sichtbar (graue Stummel) statt eine Linie
+ * über fehlende Tage zu ziehen. Mit `max` (z. B. kcal-Ziel) werden Säulen darüber rot.
+ */
+export function miniBars(container, values, { max, color = 'var(--accent)' } = {}) {
+  const v = values.map(x => (x == null ? null : Number(x)));
+  const valid = v.filter(x => x != null);
+  if (!valid.length) { container.innerHTML = ''; return; }
+  const W = 120, H = 34, n = v.length, gap = 2, bw = (W - gap * (n - 1)) / n;
+  const top = Math.max(...valid, max ?? 0) || 1;
+  container.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+    ${max != null ? `<line x1="0" x2="${W}" y1="${H - (max / top) * H}" y2="${H - (max / top) * H}" class="mini-goal" vector-effect="non-scaling-stroke"/>` : ''}
+    ${v.map((x, i) => {
+      const xPos = i * (bw + gap);
+      if (x == null) return `<rect x="${xPos}" y="${H - 2}" width="${bw}" height="2" rx="1" class="mini-gap"/>`;
+      const h = Math.max(2, (x / top) * H);
+      const over = max != null && x > max;
+      return `<rect x="${xPos}" y="${H - h}" width="${bw}" height="${h}" rx="1.5" style="fill:${over ? 'var(--bad)' : color}" class="mini-bar"><title>${fmt(x)}</title></rect>`;
+    }).join('')}</svg>`;
 }
 
 const observers = new WeakMap();

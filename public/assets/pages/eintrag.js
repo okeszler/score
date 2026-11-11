@@ -43,7 +43,7 @@ boot(async main => {
         <div class="field"><label for="steps">Schritte</label>
           <input id="steps" name="steps" type="number" inputmode="numeric" min="0" max="150000" step="1" value="${v('steps')}"
             placeholder="${syncSteps != null ? `Sync: ${fmt(syncSteps)}` : 'z. B. 10000'}">
-          <span class="hint">${syncSteps != null ? `Leer lassen = Sync-Wert (${fmt(syncSteps)}) nutzen` : 'Kein Sync-Wert für diesen Tag'}</span></div>
+          <span class="hint">${syncSteps != null ? `Uhr: ${fmt(syncSteps)} · es zählt der höhere Wert` : 'Kein Sync-Wert für diesen Tag'}</span></div>
         <div class="field"><label for="walk_km">Walk</label>
           <div class="input-wrap"><input id="walk_km" name="walk_km" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="${v('walk_km')}"><span class="suffix">km</span></div></div>
       </div>

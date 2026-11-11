@@ -12,10 +12,16 @@ Wochenziel, Gewichtstrend und Health-Connect-Sync aus Google Drive.
 | `/` Heute | Gewicht & Fortschritt zum Ziel, Score heute, Kacheln (Schritte, kcal, Bier, grüne Tage), Bewegung 14 Tage, „Noch ein Bier?“-Rechner |
 | `/eintrag` | Tageseintrag mit Live-Score-Vorschau, Tag vor/zurück, letzte Einträge |
 | `/woche` | Woche mit Ampel, Wochenziel, Streaks, Schnitte, Bierkonsum & Alkohol |
-| `/gewicht` (Körper) | Gewicht (30 T / 90 T / alles), Trend, Prognose, Körperzusammensetzung (Fett, Muskel, Wasser, Grundumsatz), Messungen |
-| `/gesundheit` | Blutdruck (ESC/ESH-Ampel), Ruhepuls, Schlaf (Phasen, Dauer), Blutwerte (frei benannt, Verlauf), Aktivitäten |
+| `/gewicht` (Körper) | Gewicht (30 T / 90 T / alles), Trend, Prognose, Körperzusammensetzung, **Kalorienziel-Check** (Bedarf vs. Essen vs. Waage), Messungen |
+| `/gesundheit` | Reiter: Blutdruck (ESC/ESH-Ampel), Puls/Ruhepuls, Schlaf (Phasen, Dauer, **Bier → Nacht**), Blutwerte, Aktivitäten |
 | `/verlauf` | 13-Wochen-Kalender, Ø Wochenscore, Ø Wochengewicht, Zusammenhänge (Tag nach Bier) |
 | `/einstellungen` | Ziele, Health Sync, Theme, Abmelden, Score-Erklärung |
+
+## Bestätigte Tage
+
+Ein Tag ist **bestätigt**, sobald er gespeichert, Bier eingetragen oder „Passt so ✓“ getippt wurde (`days.confirmed`).
+Nur Wasser tippen bestätigt nicht. Für Wochenziel, Streaks, Ø Score und „alkoholfrei“ zählen nur bestätigte Tage.
+Offene Tage der letzten 4 Wochen lassen sich auf der Startseite mit „Nachtragen“ bestätigen (ein Tipp pro Tag: Bier + optional Training).
 
 ## Vorläufiger Score
 
@@ -25,7 +31,7 @@ Vorläufige Tage sind in Woche/Verlauf gestrichelt markiert und zählen nicht al
 
 ## Score (0–10)
 
-- **Bewegung (max. 4):** Schritte ≥ 100 % Ziel = 3, ≥ 75 % = 2, ≥ 50 % = 1; Training +1
+- **Bewegung (max. 4):** Schritte ≥ 100 % Ziel = 3, ≥ 75 % = 2, ≥ 50 % = 1; Training +1 (Schritte: höherer Wert aus Hand und Uhr)
 - **Ernährung & Trinken (max. 3):** kcal ≤ Ziel +1, Protein ≥ Ziel +1, Trinken ≥ Ziel (Standard 2 l; Wasser + je Bier 250 ml, also halb) +1
 - **Alkohol (max. 3):** 0 Bier = 3, 1 = 2, 2 = 1, ab 3 = 0; Wochenbudget überschritten = 0
 - **Ampel:** Grün ≥ 7, Orange ≥ 4, sonst Rot. Tage ohne Eintrag sind grau.
@@ -67,7 +73,8 @@ Ordner haben. Der Sync
 
 ## Anmeldung
 
-- **PIN** über das Ziffernfeld (Secret `APP_PASSWORD`), Session-Cookie 30 Tage.
+- **PIN** über das Ziffernfeld, Session-Cookie 30 Tage. Start-PIN ist das Secret `APP_PASSWORD`; in den Einstellungen
+  lässt sie sich ändern (6–12 Ziffern, gespeichert nur als HMAC in `auth_secret`). Eine PIN-Änderung meldet alle anderen Geräte ab.
   Nach 5 Fehlversuchen wird die PIN-Anmeldung gesperrt (1 min, dann 2, 4 … bis 1 h; Zähler in `auth_state`,
   atomar, also auch gegen parallele Anfragen). Der Fingerabdruck funktioniert während einer Sperre weiter.
 - **Signierschlüssel:** Cookies und WebAuthn-Challenges werden mit `HMAC(SESSION_SECRET, PIN)` signiert
@@ -145,11 +152,10 @@ Gefundene Fehler und Logikprobleme, die in dieser Version behoben sind:
 - **Morgen-Check-in** (Merkliste): Karte „Wie geht's dir heute?“ mit 2 Fragen, je 1–5 (Gesichter):
   Kopf (benebelt … klar / Brain Fog) und Stimmung. Klappt nach dem Antippen zu, nicht im Score;
   später für Auswertungen (Bier/Schlaf/Schritte → Kopf & Stimmung am nächsten Morgen).
+- **Erledigt (11/2026):** Bier → Nacht (Gesundheit › Schlaf), Wochenrückblick (So ab 17 Uhr / Mo), offene Tage nachtragen,
+  Kalorienziel-Check, PIN in der App änderbar.
 - **Abend-Erinnerung** mit Antwort-Tasten (0 / 1 / 2+ Bier), nur wenn der Tag noch vorläufig ist.
 
-- **Auswertung „Bier → Nacht“** (vorgemerkt, Oliver sammelt erst Daten, Stand 10/2026): Ruhepuls und Tiefschlaf
-  nach 0 / 1–2 / 3+ Bier vergleichen, dazu Schlafdauer vs. kcal am Folgetag. Uhr wird nicht jede Nacht getragen,
-  daher erst ab genügend Nächten je Gruppe anzeigen; Schlaf bewusst nicht im Score.
 
 - **Wiegen-Routine:** Die letzte Messung ist vom 15.08. Ohne 2–3 Messungen pro Woche gibt es keinen Trend und
   keine Prognose. Health-Connect-Export für Gewicht wieder aktivieren (aktuell nur bis 14.08. in Drive).

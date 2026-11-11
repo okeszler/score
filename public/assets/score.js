@@ -78,11 +78,11 @@ export function daysBetween(a, b) {
 
 // ---------- Tageswerte ----------
 
-// Effektive Schritte: manueller Wert > Sync > aus Walk-km geschätzt
+// Effektive Schritte: der höhere Wert aus Handeingabe und Uhr (Sync) – eine Schätzung von Hand
+// soll gemessene Schritte nicht kleiner machen; ohne beides aus Walk-km geschätzt
 export function effectiveSteps(day) {
   if (!day) return null;
-  if (day.steps != null) return day.steps;
-  if (day.synced_steps != null) return day.synced_steps;
+  if (day.steps != null || day.synced_steps != null) return Math.max(day.steps ?? 0, day.synced_steps ?? 0);
   if (day.walk_km != null) return Math.round(day.walk_km * STEPS_PER_KM);
   return null;
 }
@@ -116,10 +116,13 @@ export function hasEntry(day) {
   return !!day && day.entry_date != null && (day.created_at != null || day.provisional === true);
 }
 
-/** Bestätigter Tag = vom Nutzer gespeichert (nicht nur importiert). */
+/** Bestätigter Tag = vom Nutzer gespeichert, Bier eingetragen oder „Passt so“ (nicht nur importiert/Wasser). */
 export function isConfirmed(day) {
   return !!day && day.created_at != null && day.created_at !== 'preview' && !day.provisional;
 }
+
+/** Zählt für Wochenziel, Streaks und Schnitte: bestätigter Tag mit grünem Score. */
+const confirmedGreen = sc => !!sc && sc.status === 'green' && !sc.provisional;
 
 /**
  * Vorläufige Tage aus importierten Daten (Schritte, MyFitnessPal) ergänzen –
@@ -127,6 +130,8 @@ export function isConfirmed(day) {
  */
 export function withProvisionalDays(daysByDate, synced = {}, food = {}, today) {
   const out = { ...daysByDate };
+  // Zeilen ohne Bestätigung (z. B. nur Wasser getippt) bleiben vorläufig
+  for (const [d, row] of Object.entries(out)) if (row && row.confirmed === 0) out[d] = { ...row, provisional: true };
   const dates = new Set([...Object.keys(synced), ...Object.keys(food)]);
   if (today) dates.add(today);
   for (const d of dates) {
@@ -202,7 +207,7 @@ export function scoreAll(daysByDate, goals) {
 export function weekSummary(daysByDate, scores, goals, monday, today) {
   const g = mergeGoals(goals);
   const days = [];
-  let green = 0, logged = 0, provisional = 0, beers = 0, alcoholFree = 0, riskDays = 0, trainings = 0;
+  let green = 0, greenProvisional = 0, confirmedN = 0, logged = 0, provisional = 0, beers = 0, alcoholFree = 0, riskDays = 0, trainings = 0;
   let stepsSum = 0, stepsN = 0, kcalSum = 0, kcalN = 0, waterSum = 0, waterN = 0, scoreSum = 0;
   for (let i = 0; i < 7; i++) {
     const date = addDays(monday, i);
@@ -213,8 +218,9 @@ export function weekSummary(daysByDate, scores, goals, monday, today) {
     if (!hasEntry(day)) continue;
     logged++;
     if (day.provisional) provisional++;
-    scoreSum += sc.total;
-    if (sc.status === 'green') green++;
+    else { confirmedN++; scoreSum += sc.total; } // Schnitt nur über bestätigte Tage
+    if (confirmedGreen(sc)) green++;
+    else if (sc.status === 'green') greenProvisional++;
     const b = day.beer_count || 0;
     beers += b;
     if (b === 0 && !day.provisional) alcoholFree++; // unbestätigt zählt nicht als alkoholfrei
@@ -228,10 +234,10 @@ export function weekSummary(daysByDate, scores, goals, monday, today) {
     if (fl != null) { waterSum += fl; waterN++; }
   }
   return {
-    monday, days, green, logged, provisional, beers, alcoholFree, riskDays, trainings,
+    monday, days, green, greenProvisional, confirmed: confirmedN, logged, provisional, beers, alcoholFree, riskDays, trainings,
     goalGreen: g.green_days_per_week,
     reached: green >= g.green_days_per_week,
-    avgScore: logged ? scoreSum / logged : null,
+    avgScore: confirmedN ? scoreSum / confirmedN : null,
     avgSteps: stepsN ? Math.round(stepsSum / stepsN) : null,
     avgKcal: kcalN ? Math.round(kcalSum / kcalN) : null,
     avgWater: waterN ? Math.round(waterSum / waterN) : null,
@@ -242,13 +248,13 @@ export function weekSummary(daysByDate, scores, goals, monday, today) {
   };
 }
 
-/** Grüne Tage in Folge, endend heute (oder gestern, solange heute noch nicht grün ist). */
+/** Bestätigte grüne Tage in Folge, endend heute (oder gestern, solange heute noch nicht bestätigt grün ist). */
 export function activeStreak(scores, today) {
   let d = today;
-  // Heute zählt erst, wenn der Tag grün ist – ein noch laufender Tag unterbricht die Serie nicht
-  if (!scores[d] || scores[d].status !== 'green') d = addDays(d, -1);
+  // ein noch laufender Tag unterbricht die Serie nicht
+  if (!confirmedGreen(scores[d])) d = addDays(d, -1);
   let n = 0;
-  while (scores[d] && scores[d].status === 'green') { n++; d = addDays(d, -1); }
+  while (confirmedGreen(scores[d])) { n++; d = addDays(d, -1); }
   return n;
 }
 
@@ -289,6 +295,37 @@ export function weightTrend(weights, goalKg, today, windowDays = 42) {
     if (days < 365 * 5) eta = addDays(today, days);
   }
   return { perWeek, nowKg, eta, points: n };
+}
+
+/**
+ * Kalorienziel-Check: geschätzter Tagesbedarf (Grundumsatz × 1,15 + Schritte) gegen Ziel, Gegessenes und Waage.
+ * Mit genug Daten (≥ 10 Tage mit kcal, ≥ 4 Wiegungen) wird der Bedarf zusätzlich aus Essen + tatsächlichem
+ * Gewichtsverlauf geschätzt – das deckt unvollständiges Tracking oder einen überschätzten Bedarf auf.
+ */
+export const CAL_CHECK = { days: 28, minKcalDays: 10, minWeighIns: 4, rateKgWeek: 0.5, bmrFactor: 1.15 };
+export function calorieCheck({ weights, daysByDate, goals, today, bmr }) {
+  const g = mergeGoals(goals);
+  if (!bmr) return null;
+  const dates = Array.from({ length: CAL_CHECK.days }, (_, i) => addDays(today, -1 - i));
+  const kcals = dates.map(d => effectiveKcal(daysByDate[d])).filter(v => v != null);
+  const steps = dates.map(d => effectiveSteps(daysByDate[d])).filter(v => v != null);
+  const avgSteps = steps.length ? steps.reduce((a, b) => a + b, 0) / steps.length : 0;
+  const need = bmr * CAL_CHECK.bmrFactor + avgSteps * KCAL_PER_STEP;
+  const avgKcal = kcals.length ? kcals.reduce((a, b) => a + b, 0) / kcals.length : null;
+  const trend = weightTrend(weights, g.weight_kg, today);
+  const weighIns = weights.filter(w => w.weight_kg != null && daysBetween(w.entry_date, today) <= 42).length;
+  const enough = kcals.length >= CAL_CHECK.minKcalDays && weighIns >= CAL_CHECK.minWeighIns && trend != null;
+  const realDeficit = trend ? (-trend.perWeek * KCAL_PER_KG_FAT) / 7 : null;
+  const realNeed = enough ? avgKcal + realDeficit : null;
+  const base = realNeed ?? need;
+  const round50 = v => Math.round(v / 50) * 50;
+  const suggest = Math.max(round50(bmr), round50(base - (CAL_CHECK.rateKgWeek * KCAL_PER_KG_FAT) / 7));
+  return {
+    bmr, avgSteps: Math.round(avgSteps), need: round50(need), realNeed: realNeed != null ? round50(realNeed) : null,
+    avgKcal: avgKcal != null ? Math.round(avgKcal) : null, kcalDays: kcals.length, weighIns, enough,
+    target: g.kcal_target, targetRate: ((base - g.kcal_target) * 7) / KCAL_PER_KG_FAT,
+    realRate: trend ? -trend.perWeek : null, suggest,
+  };
 }
 
 /** Wie viel Defizit pro Tag nötig wäre, um das Ziel bis `targetDate` zu erreichen. */

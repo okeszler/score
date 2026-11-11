@@ -1,3 +1,4 @@
+import { pinIsShort } from '../../lib/auth.js';
 import { json, readJson, handler, HttpError } from '../../lib/http.js';
 
 // GET /api/settings -> { settings: { key: wert } }   PUT /api/settings { key, value }
@@ -5,7 +6,7 @@ export const onRequestGet = handler(async ({ env }) => {
   const { results } = await env.DB.prepare('SELECT key, value FROM app_settings').all();
   const settings = {};
   for (const r of results) { try { settings[r.key] = JSON.parse(r.value); } catch {} }
-  return json({ settings });
+  return json({ settings, pinShort: await pinIsShort(env) });
 });
 
 export const onRequestPut = handler(async ({ request, env }) => {
