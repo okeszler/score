@@ -3,6 +3,7 @@ import { animateIn, api, boot, countUp, esc, fmt, fmtDate, fmtLong, icon, loadCo
 import { lineChart, miniBars, sparkline } from '../charts.js';
 import { bpCategory } from '../health.js';
 import { applyOrder, grip, makeSortable } from '../sortable.js';
+import { infoCardShell, loadInfo } from '../info.js';
 import { challengeCard, drawTg, openCraving, openDrink, openStart, startCard, tgCard, wireChallenge } from '../challenge.js';
 
 shell({ page: 'heute', title: 'Hallo Oliver', subtitle: 'Mein Weg zu 85 kg' });
@@ -75,6 +76,7 @@ boot(async main => {
   main.innerHTML = `
   <div class="pinned">
   ${ch ? challengeCard(chStats, ch) : startCard()}
+  ${infoCardShell()}
   ${ch && health ? tgCard(health.labs, ch, today) : ''}
   ${weightAge != null && weightAge > 7 ? `
     <div class="card notice warn" data-reveal>${icon('scale')}
@@ -120,6 +122,7 @@ boot(async main => {
           ${part('Ernährung', sc.parts.ernaehrung, 3)}
           ${part('Alkohol', sc.parts.alkohol, 3)}
           ${sc.challenge ? part('Bonus alkoholfrei', sc.parts.bonus, 2) : ''}
+          ${part('Info gelesen', sc.parts.info, 1)}
         </div>
       </div>
       ${sc.provisional ? `
@@ -243,6 +246,7 @@ boot(async main => {
     if (health) drawTg(health.labs);
     countUp(document.getElementById('ch-streak'), chStats.streak, 0, 900);
   }
+  loadInfo(ctx, { streak: chStats?.streak ?? 0, labs: health?.labs || [] });
   if (openDrinkNow) openDrink(ctx);
   document.getElementById('confirm-day')?.addEventListener('click', async e => {
     e.target.disabled = true;
