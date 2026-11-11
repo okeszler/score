@@ -12,7 +12,7 @@ Wochenziel, Gewichtstrend und Health-Connect-Sync aus Google Drive.
 | `/` Heute | Gewicht & Fortschritt zum Ziel, Score heute, Kacheln (Schritte, kcal, Bier, grüne Tage), Bewegung 14 Tage, „Noch ein Bier?“-Rechner |
 | `/eintrag` | Tageseintrag mit Live-Score-Vorschau, Tag vor/zurück, letzte Einträge |
 | `/woche` | Woche mit Ampel, Wochenziel, Streaks, Schnitte, Bierkonsum & Alkohol |
-| `/gewicht` (Körper) | Gewicht (30 T / 90 T / alles), Trend, Prognose, Körperzusammensetzung, **Kalorienziel-Check** (Bedarf vs. Essen vs. Waage), Messungen |
+| `/gewicht` (Körper) | Gewicht (30 T / 90 T / alles), Trend, Prognose, Körperzusammensetzung, **Kalorienziel-Check** (Bedarf vs. Essen vs. Waage; schlägt nie eine Erhöhung über das Ziel ≤ 2.000 kcal vor), Messungen |
 | `/gesundheit` | Reiter: Blutdruck (ESC/ESH-Ampel), Puls/Ruhepuls, Schlaf (Phasen, Dauer, **Bier → Nacht**), Blutwerte, Aktivitäten |
 | `/verlauf` | 13-Wochen-Kalender, Ø Wochenscore, Ø Wochengewicht, Zusammenhänge (Tag nach Bier) |
 | `/einstellungen` | Ziele, Health Sync, Theme, Abmelden, Score-Erklärung |

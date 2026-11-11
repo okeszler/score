@@ -181,7 +181,8 @@ boot(async main => {
 
 function calCard(c) {
   const rate = r => `${r >= 0 ? '−' : '+'}${fmt(Math.abs(r), 2)} kg/Woche`;
-  const diff = c.suggest - c.target;
+  // Das Ziel wird nie angehoben (Obergrenze 2.000 kcal) – vorgeschlagen wird höchstens eine Senkung
+  const lower = c.suggest < c.target - 100;
   return `
   <section class="card" data-reveal style="margin-top:16px">
     <div class="card-title">Kalorienziel-Check</div>
@@ -195,10 +196,12 @@ function calCard(c) {
     <p style="margin:14px 0 0;font-size:.9rem">${c.enough
       ? `${c.realNeed < c.need - 250
         ? 'Die Waage zeigt weniger Abnahme, als die erfassten Kalorien erwarten lassen – vermutlich wird nicht alles erfasst (Getränke, Snacks, Öl) oder der Bedarf ist niedriger als geschätzt.'
-        : 'Essen und Waage passen zusammen.'} Für <b>0,5 kg pro Woche</b> passen etwa <b>${fmt(c.suggest)} kcal</b>${c.suggest <= c.bmr ? ' (nicht unter dem Grundumsatz)' : ''}.`
+        : 'Essen und Waage passen zusammen.'} ${lower
+        ? `Für <b>0,5 kg pro Woche</b> wären etwa <b>${fmt(c.suggest)} kcal</b> nötig${c.suggest <= c.bmr ? ' (nicht unter dem Grundumsatz)' : ''}.`
+        : `Mit deinem Ziel von ${fmt(c.target)} kcal sind <b>${fmt(Math.max(0, c.targetRate), 2)} kg pro Woche</b> drin, wenn du es einhältst.`}`
       : `${c.realRate != null && c.targetRate - c.realRate > 0.25
         ? `Rechnerisch müsstest du mit deinem Ziel etwa ${fmt(c.targetRate, 2)} kg pro Woche abnehmen, die Waage zeigt bisher ${fmt(c.realRate, 2)} kg. Meist wird dann nicht alles erfasst (Getränke, Snacks, Öl) oder das Ziel nicht jeden Tag eingehalten – <b>Ziel deshalb vorerst lassen</b>. `
         : ''}Für einen belastbaren Abgleich fehlen noch ${[CAL_CHECK.minKcalDays - c.kcalDays > 0 ? `${CAL_CHECK.minKcalDays - c.kcalDays} Tage mit kcal` : '', CAL_CHECK.minWeighIns - c.weighIns > 0 ? `${CAL_CHECK.minWeighIns - c.weighIns} Wiegungen` : ''].filter(Boolean).join(' und ')} (letzte 4 bzw. 6 Wochen).`}</p>
-    ${c.enough && Math.abs(diff) >= 100 ? `<button class="btn secondary block" style="margin-top:12px" data-set-kcal="${c.suggest}">Kalorienziel auf ${fmt(c.suggest)} kcal setzen</button>` : c.enough ? '<p class="muted" style="font-size:.8rem;margin:10px 0 0">Dein Ziel passt dazu ✓</p>' : ''}
+    ${c.enough && lower ? `<button class="btn secondary block" style="margin-top:12px" data-set-kcal="${c.suggest}">Kalorienziel auf ${fmt(c.suggest)} kcal setzen</button>` : c.enough ? '<p class="muted" style="font-size:.8rem;margin:10px 0 0">Dein Ziel bleibt ✓</p>' : ''}
   </section>`;
 }
