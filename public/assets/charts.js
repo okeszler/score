@@ -77,7 +77,8 @@ export function lineChart(container, opts) {
     const X = d => pad.l + (daysBetween(x0, d) / span) * iw;
 
     const ys = all.map(p => p.y);
-    if (opts.goal) ys.push(opts.goal.y);
+    const goals = opts.goals || (opts.goal ? [opts.goal] : []);
+    for (const g of goals) ys.push(g.y);
     let lo = Math.min(...ys), hi = Math.max(...ys);
     const padY = (hi - lo) * 0.12 || 1;
     lo -= padY; hi += padY;
@@ -106,10 +107,11 @@ export function lineChart(container, opts) {
         .textContent = span > 60 ? monthDate(iso) : shortDate(iso);
     }
 
-    if (opts.goal) {
-      el('line', { class: 'goal-line', x1: pad.l, x2: W - pad.r, y1: Y(opts.goal.y), y2: Y(opts.goal.y) }, svg);
+    for (const g of goals) {
+      const line = el('line', { class: 'goal-line', x1: pad.l, x2: W - pad.r, y1: Y(g.y), y2: Y(g.y) }, svg);
+      if (g.color) line.style.stroke = g.color;
       // Beschriftung rechts über der Linie (links liegt sie oft auf den ersten Datenpunkten)
-      if (opts.goal.label) el('text', { class: 'goal-label', x: W - pad.r - 2, y: Y(opts.goal.y) - 6, 'text-anchor': 'end' }, svg).textContent = opts.goal.label;
+      if (g.label) el('text', { class: 'goal-label', x: W - pad.r - 2, y: Y(g.y) - 6, 'text-anchor': 'end' }, svg).textContent = g.label;
     }
 
     const defs = el('defs', {}, svg);

@@ -31,7 +31,7 @@ test('Perfekter Tag = 10', () => {
 
 test('Ernährung: kcal im Ziel, Protein, Wasser – je 1 Punkt', () => {
   const s = scoreDay(day('2026-09-11', { steps: 6000, calories_tracked: 0, calories_kcal: 1900, protein_g: 100 }), goals);
-  assert.deepEqual(s.parts, { bewegung: 1, ernaehrung: 1, alkohol: 3 });
+  assert.deepEqual(s.parts, { bewegung: 1, ernaehrung: 1, alkohol: 3, bonus: 0 });
   assert.equal(scoreDay(day('d', { water_ml: 1999 }), goals).parts.ernaehrung, 0);
   assert.equal(scoreDay(day('d', { water_ml: 2000 }), goals).parts.ernaehrung, 1);
   assert.equal(scoreDay(day('d', { water_ml: 1500 }), { water_target: 1500 }).parts.ernaehrung, 1);

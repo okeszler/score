@@ -1,4 +1,4 @@
-import { addDays, isConfirmed } from '../score.js';
+import { addDays, alcoholUnits, isConfirmed } from '../score.js';
 import { bpCategory, STAGE_LABELS } from '../health.js';
 import { api, boot, confirmDialog, countUp, esc, fmt, fmtDate, icon, shell, today, toast } from '../app.js';
 import { barChart, lineChart } from '../charts.js';
@@ -27,7 +27,7 @@ const avg = a => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : null);
 
 boot(async main => {
   const t = today();
-  // Für Diagramme reicht der Zeitraum, für Bier → Nacht mind. ein halbes Jahr (Blutwerte liefert der Server immer komplett)
+  // Für Diagramme reicht der Zeitraum, für Alkohol → Nacht mind. ein halbes Jahr (Blutwerte liefert der Server immer komplett)
   const fetchFrom = range ? addDays(t, -Math.max(range, 180)) : '0000-01-01';
   const [h, data] = await Promise.all([
     api(`/api/health?from=${fetchFrom}`),
@@ -305,26 +305,26 @@ function bpList(rows) {
   }).join('') || '<div class="empty-state">Noch keine Messungen.</div>'}</div>`;
 }
 
-// ---------- Bier → Nacht: Ruhepuls und Schlaf in der Nacht nach 0 / 1–2 / 3+ Bier ----------
+// ---------- Alkohol → Nacht: Ruhepuls und Schlaf nach keinem / bis 2 / mehr Bier-Einheiten (Stamperl = 0,33) ----------
 const MIN_NIGHTS = 3;
 function beerVsNight(h, data) {
   if (!data) return null;
   const nightOn = Object.fromEntries(h.nights.map(n => [n.date, n]));
   const restOn = Object.fromEntries(h.pulse.filter(p => p.resting != null).map(p => [p.date, p.resting]));
-  const groups = [['0 Bier', b => b === 0], ['1–2 Bier', b => b >= 1 && b <= 2], ['3+ Bier', b => b >= 3]].map(([label, test]) => ({ label, test, rows: [] }));
+  const groups = [['kein Alkohol', b => b === 0], ['bis 2 Bier', b => b > 0 && b <= 2], ['mehr', b => b > 2]].map(([label, test]) => ({ label, test, rows: [] }));
   for (const d of data.days) {
     if (!isConfirmed(d) || d.confirmed === 0) continue; // nur Tage mit bekanntem Bier
     const wake = addDays(d.entry_date, 1); // die Nacht gehört zum Aufwach-Tag
     const n = nightOn[wake];
     if (!n) continue;
-    groups.find(g => g.test(d.beer_count || 0))?.rows.push({ sleep: n.asleepSeconds, deep: n.stages.deep ?? null, rem: n.stages.rem ?? null, rest: restOn[wake] ?? null });
+    groups.find(g => g.test(alcoholUnits(d)))?.rows.push({ sleep: n.asleepSeconds, deep: n.stages.deep ?? null, rem: n.stages.rem ?? null, rest: restOn[wake] ?? null });
   }
   const mean = (rows, k) => avg(rows.map(r => r[k]).filter(v => v != null));
   return groups.map(g => ({ label: g.label, n: g.rows.length, sleep: mean(g.rows, 'sleep'), deep: mean(g.rows, 'deep'), rem: mean(g.rows, 'rem'), rest: mean(g.rows, 'rest') }));
 }
 
 function beerNightCard(groups) {
-  const head = '<div class="card-title">Bier → Nacht</div>';
+  const head = '<div class="card-title">Alkohol → Nacht</div>';
   if (!groups) return `${head}<div class="empty-state">Daten konnten nicht geladen werden.</div>`;
   const ok = groups.filter(g => g.n >= MIN_NIGHTS);
   const base = groups[0];
@@ -335,7 +335,7 @@ function beerNightCard(groups) {
     return ` <small class="${worse ? 'bad' : 'good'}">${d > 0 ? '+' : '−'}${k === 'rest' ? fmt(Math.abs(d), 1) : hm(Math.abs(d))}</small>`;
   };
   return `${head}
-    <p class="muted" style="margin:0 0 12px;font-size:.85rem">Nächte nach bestätigten Tagen, verglichen nach Bier am Vorabend (letzte 6 Monate).</p>
+    <p class="muted" style="margin:0 0 12px;font-size:.85rem">Nächte nach bestätigten Tagen, verglichen nach Alkohol am Vorabend (Bier + Stamperl, letzte 6 Monate).</p>
     <div class="table-wrap"><table class="cmp">
       <thead><tr><th></th>${groups.map(g => `<th>${g.label}<small>${g.n} ${g.n === 1 ? 'Nacht' : 'Nächte'}</small></th>`).join('')}</tr></thead>
       <tbody>

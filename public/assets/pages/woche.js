@@ -1,7 +1,8 @@
 import { addDays, activeStreak, BEER, isConfirmed, isValidDate, MIN_ALCOHOL_FREE_DAYS, RISK_DAY_G, weekStart, weekStreak, weekSummary, daysBetween } from '../score.js';
-import { animateIn, boot, countUp, fmt, fmtDate, icon, loadContext, shell } from '../app.js';
+import { animateIn, api, boot, countUp, fmt, fmtDate, icon, loadContext, shell } from '../app.js';
+import { cravingSummary } from '../challenge.js';
 
-shell({ page: 'woche', title: 'Woche', subtitle: 'Grüne Tage, Streaks & Bier' });
+shell({ page: 'woche', title: 'Woche', subtitle: 'Grüne Tage, Streaks & Alkohol' });
 
 const WD = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
@@ -12,7 +13,9 @@ boot(async main => {
   monday = isValidDate(monday) ? weekStart(monday) : weekStart(today);
   if (monday > weekStart(today)) monday = weekStart(today);
   const isCurrent = monday === weekStart(today);
-  const w = weekSummary(daysByDate, scores, goals, monday, today);
+  const w = weekSummary(daysByDate, scores, goals, monday, today, ctx.challenge);
+  const crav = await api(`/api/cravings?from=${monday}`).catch(() => null);
+  const weekCravings = (crav?.cravings || []).filter(c => c.entry_date <= addDays(monday, 6));
   const sunday = addDays(monday, 6);
   const daysLeft = isCurrent ? 7 - (daysBetween(monday, today) + 1) : 0;
   // heute kann noch grün bzw. alkoholfrei werden
@@ -63,29 +66,37 @@ boot(async main => {
     </section>
 
     <section class="card" data-reveal>
-      <div class="card-title">Bierkonsum</div>
+      <div class="card-title">Alkohol${w.challenge ? ' <span class="pill green" style="text-transform:none;letter-spacing:0">Alkohol-Pause</span>' : ''}</div>
       <div class="stats">
-        <div><b id="b1">0</b><span>Bier / ${w.beerBudget}</span></div>
+        <div><b id="b1">0</b><span>Bier${w.challenge ? '' : ` / ${w.beerBudget}`}</span></div>
+        <div><b>${w.shots}</b><span>Stamperl</span></div>
         <div><b>${fmt(w.alcoholG)}</b><span>g Alkohol</span></div>
-        <div><b>${fmt(w.beers * BEER.kcal)}</b><span>kcal</span></div>
       </div>
       <div class="rows">
+        ${w.challenge ? `<div class="row"><span>Alkoholfreie Tage (bestätigt)</span>
+          <b class="${w.alcoholFree === w.days.filter(d => !d.future).length ? 'good' : 'warn'}">${w.alcoholFree} von ${w.days.filter(d => !d.future).length}</b></div>` : `
         <div class="row" style="display:block">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Wochenalkohol</span>
             <b class="${alcPct >= 100 ? 'bad' : alcPct >= 75 ? 'warn' : 'good'}">${fmt(w.alcoholG)} g / ${fmt(w.alcoholBudgetG)} g</b></div>
           <div class="progress ${alcPct >= 100 ? 'bad' : alcPct >= 75 ? 'warn' : ''}"><i data-w="${alcPct}"></i></div>
         </div>
         <div class="row"><span>Alkoholfreie Tage</span>
-          <b class="${afOk ? 'good' : afPossible ? 'warn' : 'bad'}">${w.alcoholFree} von min. ${MIN_ALCOHOL_FREE_DAYS}${!afOk && afPossible && isCurrent ? ' (noch möglich)' : ''}</b></div>
+          <b class="${afOk ? 'good' : afPossible ? 'warn' : 'bad'}">${w.alcoholFree} von min. ${MIN_ALCOHOL_FREE_DAYS}${!afOk && afPossible && isCurrent ? ' (noch möglich)' : ''}</b></div>`}
+        <div class="row"><span>Kalorien aus Alkohol</span><b>${fmt(w.beerCount * BEER.kcal + w.shots * 50)} kcal</b></div>
         <div class="row"><span>Risikotage (&gt; ${RISK_DAY_G} g)</span><b class="${w.riskDays ? 'bad' : 'good'}">${w.riskDays} ${w.riskDays === 1 ? 'Tag' : 'Tage'}</b></div>
       </div>
-      <p class="muted" style="font-size:.78rem;margin:10px 0 0">Nur eingetragene Tage zählen. 1 Bier = 0,5 l, 5 % ≈ ${fmt(BEER.alcoholG, 1)} g Alkohol.</p>
+      <p class="muted" style="font-size:.78rem;margin:10px 0 0">Nur eingetragene Tage zählen. 1 Bier = 0,5 l, 5 % ≈ ${fmt(BEER.alcoholG, 1)} g Alkohol; 1 Stamperl (2 cl) zählt als 0,33 Bier.</p>
     </section>
-  </div>`;
+  </div>
+
+  <section class="card" data-reveal style="margin-top:16px">
+    <div class="card-title">Verlangen & Auslöser</div>
+    ${cravingSummary(weekCravings)}
+  </section>`;
 
   countUp(document.getElementById('g'), w.green, 0, 600);
-  countUp(document.getElementById('b1'), w.beers, 0, 600);
+  countUp(document.getElementById('b1'), w.beerCount, 0, 600);
   countUp(document.getElementById('s1'), activeStreak(scores, today), 0, 800);
-  countUp(document.getElementById('s2'), weekStreak(daysByDate, scores, goals, today), 0, 800);
+  countUp(document.getElementById('s2'), weekStreak(daysByDate, scores, goals, today, ctx.challenge), 0, 800);
   animateIn(() => main.querySelectorAll('[data-w]').forEach(i => (i.style.width = `${i.dataset.w}%`)));
 });

@@ -1,25 +1,37 @@
-import { addDays, beerDecision, daysBetween, effectiveFluid, effectiveKcal, effectiveProtein, effectiveSteps, BEER_FLUID_ML, isConfirmed, weekStart, weekSummary, weightTrend, activeStreak, BEER } from '../score.js';
+import { addDays, challengeStats, inChallenge, daysBetween, effectiveFluid, effectiveKcal, effectiveProtein, effectiveSteps, BEER_FLUID_ML, isConfirmed, weekStart, weekSummary, weightTrend, activeStreak, BEER } from '../score.js';
 import { animateIn, api, boot, countUp, esc, fmt, fmtDate, fmtLong, icon, loadContext, modal, ring, shell, statusLabel, toast, today as todayIso } from '../app.js';
 import { lineChart, miniBars, sparkline } from '../charts.js';
 import { bpCategory } from '../health.js';
 import { applyOrder, grip, makeSortable } from '../sortable.js';
+import { challengeCard, drawTg, openCraving, openDrink, openStart, startCard, tgCard, wireChallenge } from '../challenge.js';
 
 shell({ page: 'heute', title: 'Hallo Oliver', subtitle: 'Mein Weg zu 85 kg' });
 
 // Schnelltasten am App-Symbol (manifest.webmanifest → shortcuts): /?quick=bier | /?quick=wasser
+// Während der Alkohol-Pause trägt "+1 Bier" nicht direkt ein, sondern öffnet den Entscheidungsrechner.
 const QUICK = {
   bier: { body: { beer_delta: 1 }, msg: '+1 Bier eingetragen' },
   wasser: { body: { water_delta: 250 }, msg: '+250 ml Wasser eingetragen' },
 };
-const quick = QUICK[new URLSearchParams(location.search).get('quick')];
+const quickKey = new URLSearchParams(location.search).get('quick');
+const quick = QUICK[quickKey];
 if (quick) history.replaceState(null, '', '/'); // Neuladen trägt nicht doppelt ein
-const quickDone = quick && api(`/api/days/${todayIso()}`, { method: 'PATCH', body: quick.body })
+let quickBeer = quickKey === 'bier';
+const quickDone = quick && !quickBeer && api(`/api/days/${todayIso()}`, { method: 'PATCH', body: quick.body })
   .then(() => toast(quick.msg, 'success'), ex => toast(ex.message, 'error'));
 
 boot(async main => {
   await quickDone;
+  let openDrinkNow = false;
+  if (quickBeer) {
+    quickBeer = false;
+    const pre = await loadContext(7);
+    if (inChallenge(pre.challenge, pre.today)) openDrinkNow = true;
+    else await api(`/api/days/${todayIso()}`, { method: 'PATCH', body: QUICK.bier.body })
+      .then(() => toast(QUICK.bier.msg, 'success'), ex => toast(ex.message, 'error'));
+  }
   const [ctx, health, settingsRes] = await Promise.all([
-    loadContext(35),
+    loadContext(70),
     api(`/api/health?from=${addDays(todayIso(), -30)}`).catch(() => null),
     api('/api/settings').catch(() => ({})),
   ]);
@@ -27,7 +39,7 @@ boot(async main => {
   const { today, goals, daysByDate, scores, lastWeight, firstWeight, synced } = ctx;
   const day = daysByDate[today];
   const sc = scores[today];
-  const week = weekSummary(daysByDate, scores, goals, weekStart(today), today);
+  const week = weekSummary(daysByDate, scores, goals, weekStart(today), today, ctx.challenge);
 
   // ---- Gewicht / Fortschritt ----
   const start = goals.start_weight_kg ?? firstWeight?.weight_kg ?? null;
@@ -56,9 +68,14 @@ boot(async main => {
   const openDays = Array.from({ length: 28 }, (_, i) => addDays(today, -1 - i))
     .filter(d => daysByDate[d] && !isConfirmed(daysByDate[d]));
   const review = weeklyReview(ctx);
+  const ch = ctx.challenge;
+  const chActive = inChallenge(ch, today);
+  const chStats = ch ? challengeStats(daysByDate, ch, today) : null;
 
   main.innerHTML = `
   <div class="pinned">
+  ${ch ? challengeCard(chStats, ch) : startCard()}
+  ${ch && health ? tgCard(health.labs, ch, today) : ''}
   ${weightAge != null && weightAge > 7 ? `
     <div class="card notice warn" data-reveal>${icon('scale')}
       <div>Deine letzte Gewichtsmessung ist <b>${weightAge} Tage</b> alt. Wiegen und
@@ -102,14 +119,15 @@ boot(async main => {
           ${part('Bewegung', sc.parts.bewegung, 4)}
           ${part('Ernährung', sc.parts.ernaehrung, 3)}
           ${part('Alkohol', sc.parts.alkohol, 3)}
+          ${sc.challenge ? part('Bonus alkoholfrei', sc.parts.bonus, 2) : ''}
         </div>
       </div>
       ${sc.provisional ? `
         <p class="muted" style="font-size:.85rem;margin:14px 0 0">Aus importierten Daten berechnet${stepsToday != null ? ` (${fmt(stepsToday)} Schritte${kcalToday != null ? `, ${fmt(kcalToday)} kcal` : ''})` : ''}.
-          Annahme: <b>0 Bier, kein Training</b> – bitte bestätigen.</p>
+          Annahme: <b>kein Alkohol, kein Training</b> – bitte bestätigen.</p>
         <div class="btn-row" style="margin-top:12px">
           <a class="btn" style="flex:2" href="/eintrag?date=${today}">${icon('plus')} Daten ergänzen</a>
-          <button class="btn secondary" style="flex:1" id="confirm-day" title="Kein Bier, kein Training – Tag so bestätigen">Passt so ✓</button>
+          <button class="btn secondary" style="flex:1" id="confirm-day" title="Kein Alkohol, kein Training – Tag so bestätigen">${chActive ? 'Kein Alkohol ✓' : 'Passt so ✓'}</button>
         </div>` : `
         <a class="btn secondary block" style="margin-top:16px" href="/eintrag?date=${today}">${icon('edit')} Daten ergänzen</a>`}
     </section>
@@ -128,8 +146,11 @@ boot(async main => {
       <div class="tile-viz" id="sp-kcal"></div>
     </a>
     <a class="tile" data-id="beer" href="/woche">${grip("grip-tile")}
+      ${week.challenge ? `
+      <div class="tile-value"><span id="t-beer">0</span><span class="unit">/ ${Math.max(1, week.days.filter(d => !d.future).length)} alkoholfrei</span></div>
+      <div class="tile-label">diese Woche · ${week.beers ? `${fmt(week.beers, week.beers % 1 ? 1 : 0)} Bier-Einheiten` : 'kein Alkohol'}</div>` : `
       <div class="tile-value"><span id="t-beer">0</span><span class="unit">/ ${fmt(week.beerBudget)} Bier</span></div>
-      <div class="tile-label">diese Woche · ${week.beerLeft >= 0 ? `${week.beerLeft} übrig` : `${-week.beerLeft} drüber`}</div>
+      <div class="tile-label">diese Woche · ${week.beerLeft >= 0 ? `${fmt(week.beerLeft, week.beerLeft % 1 ? 1 : 0)} übrig` : `${fmt(-week.beerLeft, 1)} drüber`}</div>`}
       <div class="tile-viz" style="display:flex;align-items:flex-end"><div class="progress ${beerPct >= 100 ? 'bad' : beerPct >= 75 ? 'warn' : ''}" style="width:100%"><i data-w="${beerPct}"></i></div></div>
     </a>
     <a class="tile" data-id="green" href="/woche">${grip("grip-tile")}
@@ -162,9 +183,9 @@ boot(async main => {
   </div>
   <div class="blk" data-id="beer" data-span="1" data-reveal>${grip("grip-top")}
     <section class="card">
-      <div class="card-title"><span>Noch ein Bier?</span>${icon('beer', '').replace('<svg', '<svg style="width:20px;height:20px;color:var(--accent)"')}</div>
-      <p class="muted" style="margin:0 0 14px">Bevor du bestellst: Was kostet dich das nächste Bier – Wochenbudget, Score und Kalorien?</p>
-      <button class="btn block" id="beer-btn">Entscheidungsrechner öffnen</button>
+      <div class="card-title"><span>Etwas trinken?</span>${icon('beer', '').replace('<svg', '<svg style="width:20px;height:20px;color:var(--accent)"')}</div>
+      <p class="muted" style="margin:0 0 14px">Vorher die Zahlen sehen: ${chActive ? 'Streak' : 'Wochenbudget'}, Score und Kalorien – und was es stattdessen gibt.</p>
+      <button class="btn block" id="beer-btn">Ich will etwas trinken</button>
     </section>
   </div>
   </div>`;
@@ -193,7 +214,7 @@ boot(async main => {
   countUp(document.getElementById('hp'), Math.round(progress));
   countUp(document.getElementById('t-steps'), stepsToday);
   countUp(document.getElementById('t-kcal'), kcalToday);
-  countUp(document.getElementById('t-beer'), week.beers, 0, 600);
+  countUp(document.getElementById('t-beer'), week.challenge ? week.alcoholFree : week.beers, week.challenge || week.beers % 1 === 0 ? 0 : 1, 600);
   countUp(document.getElementById('t-green'), week.green, 0, 600);
   animateIn(() => {
     document.getElementById('hpb').style.width = `${progress}%`;
@@ -213,7 +234,16 @@ boot(async main => {
     e.target.closest('.review').remove();
   });
   main.querySelector('[data-sync-inline]')?.addEventListener('click', () => document.querySelector('[data-sync]').click());
-  document.getElementById('beer-btn').addEventListener('click', () => openBeer(ctx));
+  document.getElementById('beer-btn').addEventListener('click', () => openDrink(ctx));
+  document.getElementById('drink-btn')?.addEventListener('click', () => openDrink(ctx));
+  document.getElementById('crave-btn')?.addEventListener('click', () => openCraving());
+  document.getElementById('ch-start')?.addEventListener('click', () => openStart(today));
+  if (ch) {
+    wireChallenge(main, chStats, ch);
+    if (health) drawTg(health.labs);
+    countUp(document.getElementById('ch-streak'), chStats.streak, 0, 900);
+  }
+  if (openDrinkNow) openDrink(ctx);
   document.getElementById('confirm-day')?.addEventListener('click', async e => {
     e.target.disabled = true;
     try {
@@ -238,36 +268,6 @@ boot(async main => {
 
 function part(name, v, max) {
   return `<div class="part"><span>${name}</span><div class="bar"><i data-w="${(v / max) * 100}"></i></div><b>${v}/${max}</b></div>`;
-}
-
-function openBeer(ctx) {
-  const r = beerDecision(ctx.daysByDate, ctx.goals, ctx.today);
-  const title = { ok: 'Vertretbar', meh: 'Grenzwertig', no: 'Lieber nicht' }[r.verdict];
-  modal(`
-    <h2>Noch ein Bier?</h2>
-    <div class="verdict ${r.verdict}"><b>${title}</b>
-      ${r.reasons.length ? `<ul>${r.reasons.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : 'Budget und Score bleiben im grünen Bereich.'}</div>
-    <div class="rows">
-      <div class="row"><span>Heute bisher</span><b>${r.todayBeers} Bier</b></div>
-      <div class="row"><span>Woche danach</span><b class="${r.weekAfter > r.budget ? 'bad' : 'good'}">${r.weekAfter} / ${r.budget}</b></div>
-      <div class="row"><span>Score heute</span><b>${r.scoreNow ?? '–'} → ${r.scoreNext}</b></div>
-      <div class="row"><span>Alkohol heute danach</span><b class="${r.alcoholTodayG > 24 ? 'bad' : ''}">${fmt(r.alcoholTodayG)} g</b></div>
-      <div class="row"><span>Zusätzliche Kalorien</span><b>+${r.kcal} kcal</b></div>
-      <div class="row"><span>Zum Abtrainieren</span><b>≈ ${fmt(r.stepsToBurn)} Schritte</b></div>
-    </div>
-    <p class="muted" style="font-size:.8rem">Annahme: 0,5 l, 5 % vol. ≈ ${fmt(BEER.alcoholG, 1)} g Alkohol, ${BEER.kcal} kcal.</p>
-    <div class="btn-row"><button class="btn secondary" data-close style="flex:1">Lieber Wasser</button>
-      <button class="btn" data-add style="flex:1">+1 Bier eintragen</button></div>`, {
-    onOpen: (m, close) => m.querySelector('[data-add]').addEventListener('click', async e => {
-      e.target.disabled = true;
-      try {
-        await api(`/api/days/${ctx.today}`, { method: 'PATCH', body: { beer_delta: 1 } });
-        toast('Bier eingetragen. Prost – mit Maß!', 'success');
-        close();
-        document.dispatchEvent(new CustomEvent('datachange'));
-      } catch (ex) { toast(ex.message, 'error'); e.target.disabled = false; }
-    }),
-  });
 }
 
 function healthRow(h) {
@@ -307,20 +307,26 @@ function fillRows(board) {
 
 // ---------- Offene Tage nachtragen: ein Tag pro Karte, ein Tipp ----------
 function openFillDays(ctx, dates) {
-  let i = 0, saved = 0;
+  let i = 0, saved = 0, beers = 0, shots = 0;
   const card = d => {
     const day = ctx.daysByDate[d];
     const st = effectiveSteps(day), kc = effectiveKcal(day), pr = effectiveProtein(day);
     const facts = [st != null ? `${fmt(st)} Schritte` : null, kc != null ? `${fmt(kc)} kcal` : null, pr != null ? `${fmt(pr)} g Protein` : null,
       day.water_ml ? `${fmt(day.water_ml)} ml Wasser` : null].filter(Boolean).join(' · ');
+    beers = 0; shots = 0;
     return `
       <div class="fill-head"><span class="muted">${i + 1} von ${dates.length}</span><button class="btn ghost" data-close>Später</button></div>
       <h2 style="margin:6px 0 4px">${fmtLong(d)}</h2>
-      <p class="muted" style="margin:0 0 18px">${facts || 'Keine importierten Daten'}</p>
-      <div class="fill-q">Wie viel Bier?</div>
-      <div class="fill-beers">${[0, 1, 2, 3, 4, 5].map(n => `<button class="btn ${n === 0 ? '' : 'secondary'}" data-beers="${n}">${n === 5 ? '5+' : n}</button>`).join('')}</div>
+      <p class="muted" style="margin:0 0 16px">${facts || 'Keine importierten Daten'}</p>
+      <button class="btn block fill-free" data-free>Kein Alkohol ✓</button>
+      <div class="fill-q" style="margin-top:16px">Oder getrunken:</div>
+      <div class="fill-alc">
+        <div><span>Bier</span><div class="stepper"><button type="button" data-step="beers:-1" aria-label="Weniger Bier">−</button><b data-v="beers">0</b><button type="button" data-step="beers:1" aria-label="Mehr Bier">+</button></div></div>
+        <div><span>Stamperl</span><div class="stepper"><button type="button" data-step="shots:-1" aria-label="Weniger Stamperl">−</button><b data-v="shots">0</b><button type="button" data-step="shots:1" aria-label="Mehr Stamperl">+</button></div></div>
+      </div>
+      <button class="btn secondary block" data-save disabled style="margin-top:10px">Speichern</button>
       <label class="toggle" style="margin-top:14px"><input type="checkbox" data-gym><span>Training</span></label>
-      <button class="btn ghost block" data-skip style="margin-top:10px">Überspringen</button>`;
+      <button class="btn ghost block" data-skip style="margin-top:6px">Überspringen</button>`;
   };
   modal(card(dates[0]), {
     onOpen: (m, close) => {
@@ -328,21 +334,33 @@ function openFillDays(ctx, dates) {
         i++;
         if (i >= dates.length) { if (saved) toast(`${saved} ${saved === 1 ? 'Tag' : 'Tage'} bestätigt`, 'success'); close(); return; }
         m.innerHTML = card(dates[i]);
-        m.querySelector('[data-beers="0"]').focus({ preventScroll: true });
+        m.querySelector('[data-free]').focus({ preventScroll: true });
       };
-      m.addEventListener('click', async e => {
-        const b = e.target.closest('[data-beers]');
-        if (e.target.closest('[data-skip]')) return next();
-        if (!b) return;
+      const save = async (b, s) => {
         m.querySelectorAll('button').forEach(x => (x.disabled = true));
         try {
-          await api(`/api/days/${dates[i]}`, { method: 'PATCH', body: { beer_count: Number(b.dataset.beers), gym: m.querySelector('[data-gym]').checked } });
+          await api(`/api/days/${dates[i]}`, { method: 'PATCH', body: { beer_count: b, shots_count: s, gym: m.querySelector('[data-gym]').checked } });
           saved++;
           next();
         } catch (ex) {
           toast(ex.message, 'error');
           m.querySelectorAll('button').forEach(x => (x.disabled = false));
         }
+      };
+      m.addEventListener('click', e => {
+        if (e.target.closest('[data-skip]')) return next();
+        if (e.target.closest('[data-free]')) return save(0, 0);
+        const st = e.target.closest('[data-step]');
+        if (st) {
+          const [k, d] = st.dataset.step.split(':');
+          if (k === 'beers') beers = Math.max(0, Math.min(40, beers + Number(d)));
+          else shots = Math.max(0, Math.min(40, shots + Number(d)));
+          m.querySelector('[data-v="beers"]').textContent = beers;
+          m.querySelector('[data-v="shots"]').textContent = shots;
+          m.querySelector('[data-save]').disabled = !(beers || shots);
+          return;
+        }
+        if (e.target.closest('[data-save]')) save(beers, shots);
       });
     },
     onClose: () => { if (saved) document.dispatchEvent(new CustomEvent('datachange')); },
@@ -358,8 +376,8 @@ function weeklyReview(ctx) {
   else if (dow === 0) monday = addDays(weekStart(today), -7);
   else return null;
   try { if (localStorage.getItem('review-dismissed') === monday) return null; } catch {}
-  const w = weekSummary(daysByDate, scores, goals, monday, today);
-  const prev = weekSummary(daysByDate, scores, goals, addDays(monday, -7), today);
+  const w = weekSummary(daysByDate, scores, goals, monday, today, ctx.challenge);
+  const prev = weekSummary(daysByDate, scores, goals, addDays(monday, -7), today, ctx.challenge);
   const sunday = addDays(monday, 6);
   const inWeek = weights.filter(x => x.weight_kg != null && x.entry_date >= addDays(monday, -3) && x.entry_date <= sunday);
   const dW = inWeek.length >= 2 ? inWeek.at(-1).weight_kg - inWeek[0].weight_kg : null;

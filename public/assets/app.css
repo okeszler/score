@@ -607,3 +607,83 @@ table.cmp thead th small { display: block; font-weight: 400; color: var(--muted)
 table.cmp small.bad { color: var(--bad); }
 table.cmp small.good { color: var(--good); }
 table.cmp tr:last-child th, table.cmp tr:last-child td { border-bottom: 0; }
+
+/* ---- Alkohol-Pause-Challenge ---- */
+.challenge { border-top: 3px solid var(--good); }
+.challenge.start { border-top-color: var(--accent); }
+.ch-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.ch-count { display: flex; flex-direction: column; }
+.ch-count b { font-size: clamp(3.6rem, 16vw, 5rem); font-weight: 300; line-height: .95; color: var(--good); font-variant-numeric: tabular-nums; }
+.ch-count.zero b { color: var(--ink-2); }
+.ch-count span { font-size: .95rem; color: var(--ink-2); margin-top: 4px; }
+.ch-side { display: flex; gap: 18px; text-align: right; }
+.ch-side > div { display: flex; flex-direction: column; }
+.ch-side b { font-size: 1.6rem; font-weight: 400; line-height: 1.1; }
+.ch-side span { font-size: .75rem; color: var(--muted); }
+.ch-lead { margin: 12px 0 14px; font-size: .92rem; }
+.ch-progress { height: 10px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+.ch-progress i { display: block; height: 100%; width: 0; border-radius: 6px; background: linear-gradient(90deg, var(--good), color-mix(in srgb, var(--good) 70%, var(--blue))); transition: width 1.2s var(--ease); }
+.ch-progress-label { display: flex; justify-content: space-between; gap: 10px; font-size: .78rem; color: var(--muted); margin-top: 6px; flex-wrap: wrap; }
+.ch-progress-label b { color: var(--ink); }
+.badges { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.badge { position: relative; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font-size: .85rem; font-weight: 600;
+  color: var(--muted); background: var(--surface-2); border: 1.5px dashed var(--line); }
+.badge.got { color: #fff; background: var(--good); border: 0; box-shadow: 0 4px 12px color-mix(in srgb, var(--good) 35%, transparent); }
+.badge.new { animation: badge-pop .9s var(--ease) both; }
+@keyframes badge-pop { 0% { transform: scale(.3) rotate(-25deg); } 60% { transform: scale(1.25) rotate(8deg); } 100% { transform: none; } }
+.burst { position: absolute; inset: 0; pointer-events: none; }
+.burst i { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; border-radius: 2px; margin: -3px;
+  background: hsl(calc(var(--d) * 90 + 120) 70% 55%); transform: rotate(var(--a)) translateY(0); animation: burst 1.2s var(--ease) forwards; }
+@keyframes burst { to { transform: rotate(var(--a)) translateY(-38px) scale(.4); opacity: 0; } }
+.ms-feedback { margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--good-soft); font-size: .88rem; }
+.ms-feedback b { color: var(--good); }
+.safety { display: flex; gap: 10px; align-items: flex-start; margin: 14px 0 0; padding: 12px 14px; border-radius: var(--radius-sm);
+  background: var(--surface-2); font-size: .8rem; color: var(--ink-2); }
+.safety svg { width: 18px; height: 18px; flex: none; color: var(--accent); margin-top: 1px; }
+.ch-rules { margin: 14px 0 0; padding-left: 18px; font-size: .88rem; line-height: 1.7; }
+
+/* Triglycerid-Banner */
+.tg { border-left: 3px solid var(--bad); }
+.tg-last { font-size: 1.05rem; text-transform: none; letter-spacing: 0; font-weight: 600; }
+.tg-last small { font-weight: 400; color: var(--muted); font-size: .75rem; }
+.tg-last.bad { color: var(--bad); } .tg-last.warn { color: var(--warn); } .tg-last.good { color: var(--good); }
+.tg-hint { margin: 8px 0 0; font-weight: 600; font-size: .92rem; }
+
+/* Entscheidungsrechner */
+.seg { display: flex; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 12px; margin-bottom: 14px; }
+.seg button { flex: 1; min-height: 42px; border: 0; border-radius: 9px; background: none; font: inherit; font-weight: 500; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.dd-loss { padding: 14px; border-radius: var(--radius-sm); background: var(--warn-soft); margin-bottom: 10px; font-size: 1rem; }
+.dd-loss span { color: var(--muted); margin: 0 6px; }
+.dd-loss small { display: block; font-size: .78rem; color: var(--ink-2); margin-top: 4px; }
+.row b .bad, .row b.bad { color: var(--bad); }
+.alt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.alt-grid .btn { flex-direction: column; gap: 4px; padding: 12px 6px; font-size: .82rem; min-height: 72px; }
+.alt-grid .btn svg { width: 22px; height: 22px; }
+
+/* Verlangen-Timer */
+.crave-timer { position: relative; width: 150px; height: 150px; margin: 6px auto 16px; display: grid; place-items: center; }
+.crave-timer svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.crave-timer circle { fill: none; stroke-width: 6; }
+.crave-timer .track { stroke: var(--surface-2); }
+.crave-timer .bar { stroke: var(--blue); stroke-linecap: round; transition: stroke-dashoffset .5s linear; }
+.crave-timer b { font-size: 2.3rem; font-weight: 300; font-variant-numeric: tabular-nums; }
+.crave-timer.done .bar { stroke: var(--good); }
+.crave-timer.done b { color: var(--good); }
+.levels button { font-size: 1rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font: inherit; font-size: .88rem; color: var(--ink-2); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+
+/* Nachtragen mit Stamperl */
+.fill-free { min-height: 52px; font-size: 1.05rem; }
+.fill-alc { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.fill-alc > div { display: flex; flex-direction: column; gap: 6px; font-size: .85rem; color: var(--muted); }
+.fill-alc .stepper b { flex: 1; text-align: center; font-size: 1.15rem; color: var(--ink); }
+
+/* Auslöser-Auswertung (Woche) */
+.trig-bars { display: grid; gap: 8px; }
+.trig-bars > div { display: grid; grid-template-columns: 90px 1fr 24px; align-items: center; gap: 10px; font-size: .85rem; }
+.trig-bars i { display: block; height: 8px; border-radius: 4px; background: var(--surface-2); position: relative; overflow: hidden; }
+.trig-bars i::after { content: ''; position: absolute; inset: 0; width: var(--w); background: var(--accent); border-radius: 4px; }
+.trig-bars b { text-align: right; }

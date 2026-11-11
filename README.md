@@ -17,6 +17,19 @@ Wochenziel, Gewichtstrend und Health-Connect-Sync aus Google Drive.
 | `/verlauf` | 13-Wochen-Kalender, Ø Wochenscore, Ø Wochengewicht, Zusammenhänge (Tag nach Bier) |
 | `/einstellungen` | Ziele, Health Sync, Theme, Abmelden, Score-Erklärung |
 
+## Alkohol-Pause-Challenge
+
+Start und Kontrolltermin in `app_settings` (Schlüssel `challenge`, JSON `{ start, check, safety_ack }`; Standard-Kontrolle 16.12.2026),
+änderbar unter Einstellungen. Migration: `migrations/0002_challenge.sql` (`days.shots_count`, Tabelle `cravings`), wird auch zur Laufzeit angelegt.
+
+- **Score während der Challenge:** Bier-Budget 0; alkoholfreier Tag +2 Bonus (Summe max. 10); Tag mit Alkohol höchstens 6 (Orange).
+- **Stamperl (2 cl)** zählt als 0,33 Bier (`alcoholUnits` in `score.js`), auch für Wochenbudget, Gramm und Auswertungen.
+- **Startseite:** Tage ohne Alkohol (nur bestätigte Tage; ein offener Tag unterbricht, bis er nachgetragen ist), Gesamt alkoholfreier Tage
+  in der Challenge, Fortschritt bis zur Kontrolle, Abzeichen 3/7/14/21/28/42, Triglycerid-Verlauf mit Linien 500/200.
+- **„Ich will etwas trinken“:** Streak → 0, Score danach, Gegenvorschläge, erst dann „Trotzdem eintragen“. Die Schnelltaste „+1 Bier“ öffnet
+  während der Challenge diesen Rechner statt direkt einzutragen.
+- **„Ich habe Lust auf Alkohol“:** 10-Minuten-Timer, Glas Wasser, Stärke und Auslöser (`/api/cravings`); Auswertung auf der Wochenseite.
+
 ## Bestätigte Tage
 
 Ein Tag ist **bestätigt**, sobald er gespeichert, Bier eingetragen oder „Passt so ✓“ getippt wurde (`days.confirmed`).

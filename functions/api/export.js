@@ -5,7 +5,9 @@ import { handler, HttpError } from '../../lib/http.js';
 const csvCell = v => {
   if (v == null) return '';
   const s = typeof v === 'number' ? String(v).replace('.', ',') : String(v);
-  return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  // Formel-Injektion in Excel verhindern (z. B. Notiz "=HYPERLINK(...)")
+  const safe = typeof v !== 'number' && /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  return /[;"\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 };
 const toCsv = (cols, rows) => '﻿' + [cols.map(c => c[0]).join(';'), ...rows.map(r => cols.map(c => csvCell(r[c[1]])).join(';'))].join('\r\n');
 
@@ -17,7 +19,7 @@ export const onRequestGet = handler(async ({ request, env }) => {
       LEFT JOIN sync_steps_daily s USING(entry_date) LEFT JOIN sync_nutrition_daily n USING(entry_date) ORDER BY entry_date`).all()).results;
     cols = [['Datum', 'entry_date'], ['Kraft', 'gym_kraft'], ['Kardio', 'gym_kardio'], ['Schritte (manuell)', 'steps'], ['Schritte (Sync)', 'sync_steps'],
       ['Walk km', 'walk_km'], ['kcal', 'calories_kcal'], ['kcal (MFP)', 'mfp_kcal'], ['Protein g', 'protein_g'], ['Protein (MFP)', 'mfp_protein'],
-      ['Wasser ml', 'water_ml'], ['Bier', 'beer_count'], ['Notiz', 'note']];
+      ['Wasser ml', 'water_ml'], ['Bier', 'beer_count'], ['Stamperl', 'shots_count'], ['Notiz', 'note']];
   } else if (type === 'koerper') {
     rows = await getWeights(env.DB);
     cols = [['Datum', 'entry_date'], ['Gewicht kg', 'weight_kg'], ['Körperfett %', 'body_fat_pct'], ['Muskelmasse kg', 'muscle_kg'],
