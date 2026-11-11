@@ -33,3 +33,26 @@ test('Migration: bestehende Zeilen nur mit Wasser werden unbestätigt', async ()
   const rows = (await db.prepare('SELECT entry_date, confirmed FROM days ORDER BY entry_date').all()).results;
   assert.deepEqual(rows.map(r => r.confirmed), [0, 1, 1]);
 });
+
+test('Stamperl: PATCH +1, Nachtragen mit Stamperl, PUT speichert shots_count', async () => {
+  const db = createD1();
+  await ensureSchema(db);
+  let d = (await call(onRequestPatch, db, '2026-11-12', { shots_delta: 1 })).day;
+  assert.deepEqual([d.shots_count, d.beer_count, d.confirmed], [1, 0, 1]);
+  d = (await call(onRequestPatch, db, '2026-11-13', { beer_count: 0, shots_count: 2 })).day;
+  assert.deepEqual([d.shots_count, d.beer_count, d.confirmed], [2, 0, 1]);
+  d = (await call(onRequestPut, db, '2026-11-14', { beer_count: 1, shots_count: 3 })).day;
+  assert.deepEqual([d.shots_count, d.beer_count], [3, 1]);
+  assert.equal((await call(onRequestPatch, db, '2026-11-14', { shots_delta: 9 })).error, 'shots_delta ungültig');
+});
+
+test('Verlangen: speichern und auslesen, nur bekannte Auslöser', async () => {
+  const { onRequestPost, onRequestGet } = await import('../functions/api/cravings.js');
+  const db = createD1();
+  await ensureSchema(db);
+  const post = body => onRequestPost({ env: { DB: db }, request: new Request('https://s/api/cravings', { method: 'POST', body: JSON.stringify(body) }) }).then(r => r.json());
+  assert.ok((await post({ entry_date: '2026-11-12', started_at: '19:40', level: 4, triggers: ['stress', 'abend', 'hack'], completed: true })).id);
+  assert.equal((await post({ entry_date: '2026-11-12', started_at: '7' })).error, 'Uhrzeit fehlt');
+  const r = await (await onRequestGet({ env: { DB: db }, request: new Request('https://s/api/cravings?from=2026-11-01') })).json();
+  assert.deepEqual(r.cravings.map(c => [c.level, c.triggers, c.completed]), [[4, ['stress', 'abend'], 1]]);
+});
