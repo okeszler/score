@@ -66,7 +66,9 @@ Health Connect exportiert täglich CSVs nach Google Drive („Schritte JJJJ.MM.T
 „Gewicht … Health Connect.csv“). Der Service Account (Secret `GOOGLE_SERVICE_ACCOUNT_JSON`) muss Lesezugriff auf die
 Ordner haben. Der Sync
 
-- speichert Schritte als **Tagessumme** (`sync_steps_daily`, bei Überlappung gewinnt der größere/vollständigere Wert),
+- speichert Schritte als **Tagessumme** (`sync_steps_daily`, neuester Export gewinnt). Health Connect liefert Uhr
+  (Minutenwerte auf :00) und Handy (krumme Sekunden) überlappend: je Stunde zählen nur die Minutenwerte, sonst die
+  Handy-Einträge – ergibt dieselben Werte wie Samsung Health (10.11.2026: 8.071 statt 11.812 einfach summiert),
 - überspringt 30-Tage-Exporte, deren Zeitraum schon in einem neueren Export steckt (spart CPU/Downloads),
 - importiert Gewicht **und Körperfett**; als Tageswert zählt die erste Messung des Tages (morgens),
 - verarbeitet max. 4 Downloads pro Aufruf; der Client ruft so lange nach, bis alles importiert ist.
