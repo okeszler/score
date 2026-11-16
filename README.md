@@ -30,6 +30,37 @@ Start und Kontrolltermin in `app_settings` (Schlüssel `challenge`, JSON `{ star
   während der Challenge diesen Rechner statt direkt einzutragen.
 - **„Ich habe Lust auf Alkohol“:** 10-Minuten-Timer, Glas Wasser, Stärke und Auslöser (`/api/cravings`); Auswertung auf der Wochenseite.
 
+## Training aus dem Gym-Tracker
+
+SCORE übernimmt Trainingstage automatisch aus dem Gym-Tracker (Repo `okeszler/gymtracker`, D1 `gymtracker-db`, gleicher Account).
+Am Gym-Tracker wird nichts geändert; SCORE liest nur (`lib/gym.js` führt ausschließlich `SELECT` aus).
+
+- **Binding:** zweite D1-Bindung `GYM` in `wrangler.toml` (siehe unten). Fehlt sie oder fehlen lokal die Tabellen, wird still übersprungen.
+- **Quelle:** nur Sätze von `person = 'Kratos'`; `uebungen.gruppe = 'Cardio'` → `gym_kardio`, alle anderen Gruppen → `gym_kraft`.
+  Cardio wird dort in Minuten geloggt (`einheit = 'min'`, `gewicht` = Minuten): Volumen zählt nur kg-Übungen, Cardio-Minuten separat.
+- **Tag:** `ts` (UTC) → Europe/Vienna; ein Satz um 00:30 Ortszeit gehört zum neuen Tag.
+- **Ablauf:** Teil von `POST /api/sync` (Cron alle 30 Min.) – beim ersten Lauf Backfill der letzten 60 Tage, danach die letzten 3 Tage.
+  Beim Öffnen von „Heute“ zieht `POST /api/gym` heute/gestern nach.
+- **Schreiben:** Tageszusammenfassung in `gym_days` (Sätze, Volumen, Cardio-Minuten, erster/letzter Satz). In `days` wird
+  `gym_kraft`/`gym_kardio` nur hochgesetzt (`MAX`) und nur für Tage, deren Gym-Daten sich geändert haben – ein von Hand
+  abgewähltes Training kommt also nicht bei jedem Lauf zurück. Neue Tage entstehen mit `confirmed = 0`: Training zählt im
+  vorläufigen Score, der Tag ist aber erst nach Bier-Bestätigung bestätigt.
+- **Anzeige:** „aus Gym ✓ · Sätze · kg bewegt · Cardio-Minuten · Dauer“ auf „Heute“, im Tageseintrag und beim Nachtragen.
+  In der Woche zählt „Trainings“ wie bisher pro Tag (nichts doppelt).
+
+**Deploy des Bindings:** Das Pages-Projekt wird aus `wrangler.toml` konfiguriert (Git-Deploy). Der Block
+
+```toml
+[[d1_databases]]
+binding = "GYM"
+database_name = "gymtracker-db"
+database_id = "7f548e06-55ee-4305-b212-5ef4f4152e81"
+```
+
+reicht – nach dem Merge nach `main` baut Cloudflare neu und die Bindung ist aktiv (Production und Preview).
+Im Dashboard ist dafür nichts nötig; dort erscheint die Bindung unter Workers & Pages › olivers-score › Settings › Bindings
+als „verwaltet über wrangler.toml“. Lokal: `npx wrangler pages dev` legt eine leere lokale `gymtracker-db` an → Import überspringt.
+
 ## Info des Tages
 
 Karte unter dem Alkohol-Zähler: ein kurzer, sachlicher Impuls pro Tag (bei jedem Öffnen derselbe), „Mehr lesen“, „Gelesen“ (+1 Punkt

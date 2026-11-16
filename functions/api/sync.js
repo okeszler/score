@@ -2,6 +2,7 @@ import { downloadFile, FormatError, getAccessToken, listHealthFiles, rangeFromNa
 import { importStatement } from '../../lib/importers.js';
 import { json, handler, HttpError } from '../../lib/http.js';
 import { addDays } from '../../public/assets/score.js';
+import { importGym } from '../../lib/gym.js';
 
 const MAX_DOWNLOADS = 10; // pro Aufruf
 const MAX_BYTES = 3_000_000; // große 30-Tage-Exporte (Puls ~0,9 MB) kosten CPU-Zeit
@@ -30,13 +31,18 @@ export const onRequestGet = handler(async ({ env }) => {
 // Jeder Lauf (manuell oder Cron) wird in sync_log protokolliert – auch wenn er komplett scheitert.
 export const onRequestPost = handler(async ({ request, env }) => {
   const source = request.headers.has('Authorization') ? 'cron' : 'manuell';
+  // Gym-Tracker zuerst und unabhängig: ein Fehler dort stoppt den Drive-Sync nicht (und umgekehrt)
+  let gym;
+  try { gym = await importGym(env); } catch (e) { gym = { error: e.message, days: 0, changed: [] }; }
   let report;
   try {
     report = await runSync(env);
   } catch (e) {
-    await log(env, source, { imported: [], skipped: 0, stepsDays: 0, weightReadings: 0, remaining: 0, errors: [e.message] });
+    await log(env, source, { imported: [], skipped: 0, stepsDays: 0, weightReadings: 0, remaining: 0, errors: [e.message, ...(gym.error ? [`Gym: ${gym.error}`] : [])] });
     throw e;
   }
+  report.gym = gym;
+  if (gym.error) report.errors.push(`Gym: ${gym.error}`);
   await log(env, source, report);
   return json(report);
 });
