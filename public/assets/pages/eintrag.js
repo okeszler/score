@@ -1,5 +1,5 @@
 import { addDays, alcoholUnits, daysBetween, effectiveKcal, effectiveSteps, inChallenge, isConfirmed, isValidDate, scoreDay, weekStart } from '../score.js';
-import { animateIn, api, boot, confirmDialog, esc, fmt, fmtDate, fmtLong, icon, loadContext, ring, shell, statusLabel, toast, today as todayIso } from '../app.js';
+import { animateIn, api, boot, confirmDialog, esc, fmt, fmtDate, fmtLong, gymNote, icon, loadContext, ring, shell, statusLabel, toast, today as todayIso } from '../app.js';
 
 shell({ page: 'eintrag', title: 'Eintragen', subtitle: 'Bewegung · Ernährung · Alkohol' });
 
@@ -40,6 +40,7 @@ boot(async main => {
         <label class="toggle"><input type="checkbox" name="gym_kraft" ${day?.gym_kraft ? 'checked' : ''}><span>Gym: Kraft</span></label>
         <label class="toggle"><input type="checkbox" name="gym_kardio" ${day?.gym_kardio ? 'checked' : ''}><span>Gym: Kardio</span></label>
       </div>
+      ${day?.gym_import ? `<p class="gym-line" style="margin:-4px 0 0">${gymNote(day.gym_import)}</p>` : ''}
       <div class="form-grid">
         <div class="field"><label for="steps">Schritte</label>
           <input id="steps" name="steps" type="number" inputmode="numeric" min="0" max="150000" step="1" value="${v('steps')}"

@@ -8,6 +8,13 @@ database_name = "score"
 database_id = "0156d61a-6bf5-40de-b0ab-82e60868f886"
 migrations_dir = "migrations"
 
+# Gym-Tracker (eigenes Repo okeszler/gymtracker): nur lesend genutzt, Trainingstage von 'Kratos' -> days.gym_kraft/gym_kardio.
+# Ohne diese Bindung (oder lokal ohne Tabellen) wird der Import still übersprungen.
+[[d1_databases]]
+binding = "GYM"
+database_name = "gymtracker-db"
+database_id = "7f548e06-55ee-4305-b212-5ef4f4152e81"
+
 # Secrets (nicht hier eintragen!):
 #   npx wrangler pages secret put APP_PASSWORD --project-name olivers-score
 #   npx wrangler pages secret put GOOGLE_SERVICE_ACCOUNT_JSON --project-name olivers-score

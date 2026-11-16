@@ -1,5 +1,5 @@
 import { addDays, challengeStats, inChallenge, daysBetween, effectiveFluid, effectiveKcal, effectiveProtein, effectiveSteps, BEER_FLUID_ML, isConfirmed, weekStart, weekSummary, weightTrend, activeStreak, BEER } from '../score.js';
-import { animateIn, api, boot, countUp, esc, fmt, fmtDate, fmtLong, icon, loadContext, modal, ring, shell, statusLabel, toast, today as todayIso } from '../app.js';
+import { animateIn, api, boot, countUp, esc, fmt, fmtDate, fmtLong, gymNote, icon, loadContext, modal, ring, shell, statusLabel, toast, today as todayIso } from '../app.js';
 import { lineChart, miniBars, sparkline } from '../charts.js';
 import { bpCategory } from '../health.js';
 import { applyOrder, grip, makeSortable } from '../sortable.js';
@@ -20,6 +20,11 @@ if (quick) history.replaceState(null, '', '/'); // Neuladen trägt nicht doppelt
 let quickBeer = quickKey === 'bier';
 const quickDone = quick && !quickBeer && api(`/api/days/${todayIso()}`, { method: 'PATCH', body: quick.body })
   .then(() => toast(quick.msg, 'success'), ex => toast(ex.message, 'error'));
+
+// Beim Öffnen von "Heute" den aktuellen Tag aus dem Gym-Tracker nachziehen (einmal pro Seitenaufruf, im Hintergrund)
+api('/api/gym', { method: 'POST' })
+  .then(r => { if (r?.changed?.length) document.dispatchEvent(new CustomEvent('datachange')); })
+  .catch(() => {});
 
 boot(async main => {
   await quickDone;
@@ -125,12 +130,13 @@ boot(async main => {
           ${part('Info gelesen', sc.parts.info, 1)}
         </div>
       </div>
+      ${day?.gym_import ? `<p class="gym-line">${icon('flex')} Training ${gymNote(day.gym_import)}</p>` : ''}
       ${sc.provisional ? `
         <p class="muted" style="font-size:.85rem;margin:14px 0 0">Aus importierten Daten berechnet${stepsToday != null ? ` (${fmt(stepsToday)} Schritte${kcalToday != null ? `, ${fmt(kcalToday)} kcal` : ''})` : ''}.
-          Annahme: <b>kein Alkohol, kein Training</b> – bitte bestätigen.</p>
+          Annahme: <b>kein Alkohol${day?.gym_kraft || day?.gym_kardio ? '' : ', kein Training'}</b> – bitte bestätigen.</p>
         <div class="btn-row" style="margin-top:12px">
           <a class="btn" style="flex:2" href="/eintrag?date=${today}">${icon('plus')} Daten ergänzen</a>
-          <button class="btn secondary" style="flex:1" id="confirm-day" title="Kein Alkohol, kein Training – Tag so bestätigen">${chActive ? 'Kein Alkohol ✓' : 'Passt so ✓'}</button>
+          <button class="btn secondary" style="flex:1" id="confirm-day" title="Tag so bestätigen (kein Alkohol)">${chActive ? 'Kein Alkohol ✓' : 'Passt so ✓'}</button>
         </div>` : `
         <a class="btn secondary block" style="margin-top:16px" href="/eintrag?date=${today}">${icon('edit')} Daten ergänzen</a>`}
     </section>
@@ -329,7 +335,7 @@ function openFillDays(ctx, dates) {
         <div><span>Stamperl</span><div class="stepper"><button type="button" data-step="shots:-1" aria-label="Weniger Stamperl">−</button><b data-v="shots">0</b><button type="button" data-step="shots:1" aria-label="Mehr Stamperl">+</button></div></div>
       </div>
       <button class="btn secondary block" data-save disabled style="margin-top:10px">Speichern</button>
-      <label class="toggle" style="margin-top:14px"><input type="checkbox" data-gym><span>Training</span></label>
+      <label class="toggle" style="margin-top:14px"><input type="checkbox" data-gym ${day.gym_kraft || day.gym_kardio ? 'checked' : ''}><span>Training</span></label>${day.gym_import ? ` ${gymNote(day.gym_import, { details: false })}` : ''}
       <button class="btn ghost block" data-skip style="margin-top:6px">Überspringen</button>`;
   };
   modal(card(dates[0]), {

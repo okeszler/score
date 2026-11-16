@@ -720,3 +720,8 @@ table.cmp tr:last-child th, table.cmp tr:last-child td { border-bottom: 0; }
 .num-grid span { font-size: .74rem; color: var(--muted); }
 table.liver td small { color: var(--muted); font-size: .68rem; display: block; }
 table.liver td, table.liver th { padding: 6px 6px; }
+
+/* ---- Training aus dem Gym-Tracker ---- */
+.gym-note { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; color: var(--good); font-weight: 500; }
+.gym-line { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; font-size: .82rem; color: var(--ink-2); flex-wrap: wrap; }
+.gym-line svg { width: 16px; height: 16px; color: var(--good); }

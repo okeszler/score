@@ -108,6 +108,8 @@ export async function loadContext(daysBack = 120) {
   daysByDate = withProvisionalDays(daysByDate, data.synced, data.food || {}, t);
   // "Info des Tages" gelesen -> +1 Bonuspunkt
   for (const d of data.infoRead || []) if (daysByDate[d]) daysByDate[d] = { ...daysByDate[d], info_read: true };
+  // Training aus dem Gym-Tracker (nur zur Anzeige; die Flags stehen bereits in days)
+  for (const [d, g] of Object.entries(data.gym || {})) if (daysByDate[d]) daysByDate[d] = { ...daysByDate[d], gym_import: g };
   const challenge = data.challenge?.start ? data.challenge : null;
   const scores = scoreAll(daysByDate, goals, challenge);
   const weights = data.weights;
@@ -125,6 +127,17 @@ export const fmtDate = (s, opts = { weekday: 'short', day: '2-digit', month: '2-
 export const fmtLong = s => fmtDate(s, { weekday: 'long', day: '2-digit', month: 'long' });
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const statusLabel = s => STATUS[s]?.label ?? '–';
+
+/** Kurzinfo zu einem aus dem Gym-Tracker übernommenen Trainingstag: "aus Gym ✓ · 26 Sätze · 4.350 kg · 97 Min." */
+export function gymNote(g, { details = true } = {}) {
+  if (!g) return '';
+  const min = g.start && g.ende ? Math.round((Date.parse(g.ende) - Date.parse(g.start)) / 60000) : null;
+  const parts = [`${g.saetze} ${g.saetze === 1 ? 'Satz' : 'Sätze'}`];
+  if (g.volumen) parts.push(`${fmt(g.volumen)} kg bewegt`);
+  if (g.cardio_min) parts.push(`${fmt(g.cardio_min)} Min. Cardio`);
+  if (min) parts.push(`${fmt(min)} Min.`);
+  return `<span class="gym-note">aus Gym ✓${details ? ` · ${parts.join(' · ')}` : ''}</span>`;
+}
 
 // ---------- Animationen ----------
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
